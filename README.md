@@ -16,14 +16,16 @@
   <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" style="display: inline-block; margin-left:30px; width: 300px; object-fit: none; object-position: 1% 1%"/>
 
 <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
+
+<img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
 </div>
 
 <div style="">
-  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" style="width:900px; display: inline-block; margin-left:30px;"/>
+  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" style="width:900px; display: inline-block; margin-left:30px;"/>
   </div>
   
   <div style="">
-<img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
+
 </div>
 
 ## 📝 Overview
