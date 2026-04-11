@@ -13,17 +13,17 @@
 ## 👀 Screenshots
 
 <div style="">
-  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/main/Screenshot_2025-05-28-19-04-28-077_lockscreen.jpg" style="display: inline-block; margin-left:30px; width: 300px; object-fit: none; object-position: 1% 1%"/>
+  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" style="display: inline-block; margin-left:30px; width: 300px; object-fit: none; object-position: 1% 1%"/>
 
-<img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/main/Screenshot_20250528-183717.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
+<img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
 </div>
 
 <div style="">
-  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/main/Screenshot_20250528-183650.jpg" style="width:900px; display: inline-block; margin-left:30px;"/>
+  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" style="width:900px; display: inline-block; margin-left:30px;"/>
   </div>
   
   <div style="">
-<img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/main/Screenshot_20250528-183704.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
+<img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width:300px; display: inline-block; margin-left:30px;"/>
 </div>
 
 ## 📝 Overview
@@ -96,30 +96,48 @@ The user interface design allows for any non tech-profound person to understand 
 
 ## 🔧 Daily Use Cases
 
-* 📡 **Troubleshooting Connectivity:** Quickly determine weak or dead zones in your house, office, or neighborhood.
-* 🌍 **Traveling:** Monitor how well your phone maintains a connection while on the move.
-* 📱 **Dual SIM Management:** Compare and switch between SIM providers for better reception.
-* 🔋 **Battery Optimization:** Exit the app when not needed or let it run in the background for ongoing monitoring.
+    📞 Prevent call drops in weak areas
+    If signal falls below about -105 dBm, voice calls become unstable even if bars are still visible. Seeing this in advance lets you move a few steps before dialing instead of losing the call mid-conversation.
 
----
+    🎮 Avoid lag spikes during mobile gaming
+    Online games become unstable below roughly -95 dBm. Monitoring this lets you reposition before starting a match instead of dealing with unpredictable lag or disconnects.
 
-## 🛠️ Installation
+    🎥 Stable video uploads and streaming
+    Upload-heavy tasks such as live streaming or sending large videos require stronger signal, typically better than -90 dBm. dBm lets you confirm the connection is sufficient before starting.
 
-### Requirements
+    🚗 Predict signal loss on daily routes
+    While commuting, you will notice exact dBm values where signal consistently drops below usable levels. This allows planning calls or downloads outside those zones instead of discovering the problem every day.
 
-* Android Studio (for building)
-* Android 8.0 (API 26) or above
-* Dual SIM phone (for dual SIM features)
+    🏠 Choose the exact spot for hotspot usage
+    When using your phone as a hotspot, performance depends directly on signal strength. Moving from -105 dBm to -85 dBm can multiply speed several times. The app shows exactly where that improvement happens.
 
-### Steps
+    🔋 Explain sudden battery drain
+    If your phone sits at -110 dBm for long periods, it continuously boosts transmission power. This is a measurable cause of fast battery drain, not some mysterious background app.
 
-1. Clone the repository:
+    🏢 Find the one place in a building that works
+    In offices, basements, or elevators, signal can change from -75 dBm to -115 dBm within a few meters. The app helps you locate the one usable spot instead of guessing or walking randomly.
 
-   ```bash
-   git clone https://github.com/yourusername/cell-signal-strength.git
-   ```
-2. Open in **Android Studio**.
-3. Build and run on a real Android device (not emulator, due to telephony API restrictions).
+    📡 Verify signal improvement objectively exists
+    After installing a repeater or moving near a window, you can confirm improvement numerically, for example from -108 dBm to -82 dBm, instead of relying on subjective “feels better”.
+
+    📶 Decide when to switch to Wi-Fi
+    If cellular drops below about -100 dBm while Wi-Fi is available, switching avoids slow speeds and packet loss. The decision becomes data-driven instead of reactive.
+    
+    🔄 Compare network conditions across time
+    Observe how signal varies during the day. Consistent drops at specific hours indicate tower congestion or load issues rather than physical coverage problems.
+
+    ⚠ Identify false “full bars” situations
+    Some phones display high bars even at -95 dBm or worse. Seeing the real value prevents trusting misleading UI and explains why performance does not match what the screen suggests.
+    
+    📶 Detect unstable signal before drops happen
+    Signal bars on Android are not standardized and are defined by device manufacturers and carrier configuration. As a result, visually “strong” signal may still correspond to borderline radio conditions (around -95 to -105 dBm). dBm reveals radio signal degradation in real time, allowing you to react before calls drop or data stalls.
+
+    ⚠ Separate signal problems from network problems
+    Strong signal (e.g. -70 dBm) with poor internet performance indicates carrier-side congestion. Weak signal (e.g. below -105 dBm) indicates coverage limitations. This distinction prevents incorrect troubleshooting.
+
+Mobilosignal turns your Android phone into a precise signal indicating tool, replacing unreliable signal bars with quantitative data about connectivity and network troubleshooting.
+
+
 
 
 ---
