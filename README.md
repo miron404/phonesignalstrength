@@ -5,12 +5,8 @@
 - **Supports Dual SIM Devices**
 - **Completely Offline & Lightweight**
 
-💾   Download the Android Phone Signal Strength APK file: [https://github.com/Eb43/phonesignalstrength/blob/main/PhoneSignalStrength.apk](https://github.com/Eb43/phonesignalstrength/blob/main/PhoneSignalStrength.apk)
+💾   Download the Android Phone Signal Strength APK file: [https://github.com/Eb43/phonesignalstrength/releases](https://github.com/Eb43/phonesignalstrength/releases)
 
-<div style="">
-  <img alt="phone network signal strength viewer on Android" src="https://raw.githubusercontent.com/Eb43/phonesignalstrength/main/download.jpg" style="display: inline-block; margin-left:30px; width: 600px; object-fit: none; object-position: 1% 1%"/>
-</div>
----
 
 ---
 
