@@ -36,63 +36,13 @@ The user interface design allows for any non tech-profound person to understand 
 
 ---
 
-## 📱 Features
-
-### 🔢 Accurate dBm Readings
-
-* Real-time signal strength is displayed in the **standard dBm format**, ranging typically from -40 dBm (excellent) to -120 dBm (no signal).
-* Updates dynamically as signal conditions change.
-
-### 📶 Visual Signal Strength Indicator
-
-* A **color gradient signal bar** with a movable triangle marker shows signal strength graphically.
-* Helps users quickly gauge signal quality at a glance.
-
-### 📊 Dual SIM Support
-
-* Easily toggle between **SIM 1** and **SIM 2** using a simple radio button interface.
-* Displays separate signal readings for each SIM slot.
-
-### 🎨 Status Bar Icon Color Customization
-
-* Choose between **black or white text color** for the status bar icon.
-* Ensures best contrast based on your device’s theme or status bar background.
-
-### 🔀 Auto Start on Boot (Optional)
-
-* Enable automatic background launch after device reboot.
-* Ensures signal monitoring remains active without manual intervention.
-
-### ❌ Easy Exit Button
-
-* Tap the kill button (`☠️ ❌`) to completely stop the app and background service.
-* Useful for battery-conscious users or temporary use.
-
----
-
-## 🧯 UI Layout
-
-| UI Element                         | Description                                                      |
-| ---------------------------------- | ---------------------------------------------------------------- |
-| **App Icon**                       | Displayed at the top for branding.                               |
-| **Main Label**                     | "Cell Phone Signal Strength" in large font.                      |
-| **Current Signal TextView**        | Shows real-time dBm and network type (e.g., `📶 -85 dBm 4G`). |
-| **Gradient Bar + Triangle Marker** | Provides a visual cue of signal strength.                         |
-| **dBm Value Label**                | Displays the floating market with actual dBm level just below.    |
-| **SIM Selector**                   | Dual SIM support. Switch between SIM 1 and SIM 2.      |
-| **Text Color Selector**            | Toggle between black and white text for the notification bar.    |
-| **Auto Start Checkbox**            | Enables/disables auto-start on smartphone boot.                  |
-| **Exit Button**                    | Stops the service and closes the app.                            |
-
----
-
 ## ⚙️ How It Works
 
 * The app uses the `TelephonyManager` API to access **cell signal strength** data, updated every second.
 * It runs a background `Service` (`SignalStrengthService.java`) which collects and pushes updates to the UI.
 * On supported devices, it fetches signal strength separately for SIM 1 and SIM 2.
 * The triangle marker on the gradient bar adjusts position according to the dBm value.
-* Users can configure the icon color in the status bar to improve visibility.
+
 
 ---
 
