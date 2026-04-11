@@ -1,11 +1,11 @@
-# 📶 Smartphone Signal Strength Viewer
+# 📶 Mobilosignal - Smartphone Signal Strength Viewer
 
-- **Package Name:** `com.cellsignalstrength`
+- **Package Name:** `barilyuk.mobilosignal`
 - **Minimum Android Version:** Android 8 (Oreo)
 - **Supports Dual SIM Devices**
 - **Completely Offline & Lightweight**
 
-💾   Download the Android Phone Signal Strength APK file: [https://github.com/Eb43/phonesignalstrength/releases](https://github.com/Eb43/phonesignalstrength/releases)
+💾   Download the Mobilosignal - Android Phone Signal Strength - APK file: [https://github.com/Eb43/phonesignalstrength/releases](https://github.com/Eb43/phonesignalstrength/releases)
 
 
 ---
