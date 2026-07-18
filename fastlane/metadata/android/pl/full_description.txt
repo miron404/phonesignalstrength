@@ -1,0 +1,48 @@
+Mobilosignal pokazuje aktualną siłę sygnału sieci komórkowej telefonu Android w dBm. Wartość jest stale widoczna na pasku stanu oraz w powiadomieniu, nawet podczas korzystania z innych aplikacji.
+
+W przeciwieństwie do kresek zasięgu, dBm to dokładny pomiar mocy sygnału radiowego, dzięki któremu widzisz rzeczywisty stan sieci zamiast przybliżonego wskaźnika.
+
+Praktyczne zastosowania monitorowania sygnału w dBm:
+
+📞 Zapobiegaj zrywaniu połączeń
+   Jeśli sygnał spadnie poniżej około -105 dBm, rozmowy stają się niestabilne, nawet gdy paski zasięgu nadal są widoczne. Widząc to wcześniej, możesz zmienić miejsce przed wykonaniem połączenia.
+
+🎮 Unikaj opóźnień w grach mobilnych
+   Poniżej około -95 dBm gry online często tracą stabilność. Monitorowanie sygnału pozwala znaleźć lepsze miejsce przed rozpoczęciem rozgrywki.
+
+🎥 Stabilne przesyłanie i transmisje
+   Transmisje na żywo oraz wysyłanie dużych filmów zwykle wymagają sygnału lepszego niż -90 dBm. dBm pozwala sprawdzić jakość połączenia przed rozpoczęciem.
+
+🚗 Przewiduj utratę zasięgu na codziennych trasach
+   Podczas dojazdów zauważysz miejsca, w których sygnał regularnie spada poniżej użytecznego poziomu. Ułatwia to planowanie rozmów i pobierania danych.
+
+🏠 Znajdź najlepsze miejsce dla hotspotu
+   Wydajność hotspotu zależy bezpośrednio od siły sygnału. Poprawa z -105 dBm do -85 dBm może kilkukrotnie zwiększyć prędkość.
+
+🔋 Wyjaśnij szybkie rozładowywanie baterii
+   Jeżeli telefon przez dłuższy czas pracuje przy około -110 dBm, stale zwiększa moc nadawania. To rzeczywista przyczyna większego zużycia energii.
+
+🏢 Znajdź najlepszy punkt w budynku
+   W biurach, piwnicach lub windach sygnał może zmieniać się z -75 dBm do -115 dBm w odległości kilku metrów. Aplikacja pomaga znaleźć miejsce z najlepszym odbiorem.
+
+📡 Obiektywnie potwierdź poprawę sygnału
+   Po instalacji wzmacniacza lub przeniesieniu telefonu bliżej okna możesz potwierdzić poprawę, np. z -108 dBm do -82 dBm, zamiast polegać na subiektywnych odczuciach.
+
+📶 Wybierz odpowiedni moment na Wi-Fi
+   Jeżeli sygnał komórkowy spadnie poniżej około -100 dBm, a dostępne jest Wi-Fi, zmiana połączenia może zapobiec spadkom prędkości i utracie pakietów.
+
+🔄 Porównuj warunki sieci w czasie
+   Obserwuj, jak sygnał zmienia się w ciągu dnia. Regularne spadki o określonych godzinach mogą świadczyć o przeciążeniu stacji bazowej.
+
+⚠ Rozpoznawaj mylące pełne kreski zasięgu
+   Niektóre telefony pokazują wysoki poziom zasięgu nawet przy -95 dBm lub gorzej. Rzeczywista wartość wyjaśnia, dlaczego działanie sieci nie odpowiada temu, co widać na ekranie.
+
+📶 Wykrywaj niestabilny sygnał przed problemami
+   Paski zasięgu w Androidzie nie są ujednolicone i zależą od producenta oraz konfiguracji operatora. Wizualnie silny sygnał może oznaczać graniczne warunki radiowe (-95 do -105 dBm). dBm pokazuje pogarszanie się sygnału w czasie rzeczywistym.
+
+⚠ Odróżniaj problemy z zasięgiem od problemów sieci
+   Silny sygnał (np. -70 dBm) przy wolnym Internecie zwykle oznacza przeciążenie sieci operatora. Słaby sygnał (poniżej -105 dBm) wskazuje na ograniczony zasięg.
+
+Mobilosignal zmienia telefon z Androidem w precyzyjne narzędzie do pomiaru siły sygnału, zastępując niedokładne paski zasięgu obiektywnymi danymi ułatwiającymi ocenę połączenia i diagnozowanie problemów z siecią.
+
+Autor: Eugen Barilyuk EB43 https://eb43.github.io

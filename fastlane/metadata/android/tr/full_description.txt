@@ -1,0 +1,48 @@
+Mobilosignal, Android telefonunuzun hücresel sinyal gücünü gerçek zamanlı olarak dBm cinsinden gösterir. Değer, diğer uygulamaları kullanırken bile durum çubuğunda ve bir bildirimde sürekli görünür.
+
+Sinyal çubuklarının aksine dBm, radyo sinyal gücünün hassas bir ölçümüdür ve tahmine dayalı göstergeler yerine gerçek ağ koşullarını görmenizi sağlar.
+
+dBm cinsinden sinyal gücünü izlemenin pratik kullanım alanları:
+
+📞 Zayıf kapsama alanlarında arama kesilmelerini önleyin
+   Sinyal yaklaşık -105 dBm seviyesinin altına düştüğünde, çubuklar görünmeye devam etse bile sesli aramalar kararsız hale gelir. Bunu önceden görmek, arama yapmadan önce birkaç adım ilerleyerek daha iyi kapsama bulmanızı sağlar.
+
+🎮 Mobil oyunlarda gecikme artışlarını önleyin
+   Çevrim içi oyunlar yaklaşık -95 dBm altında kararsız çalışmaya başlar. Sinyali izlemek, oyuna başlamadan önce daha uygun bir konum bulmanıza yardımcı olur.
+
+🎥 Kararlı video yüklemeleri ve canlı yayınlar
+   Canlı yayınlar ve büyük video yüklemeleri genellikle -90 dBm değerinden daha güçlü bir sinyal gerektirir. dBm değeri, bağlantının yeterli olup olmadığını önceden doğrulamanızı sağlar.
+
+🚗 Günlük güzergâhlarda sinyal kaybını önceden tahmin edin
+   İşe gidip gelirken sinyalin düzenli olarak kullanılabilir seviyenin altına düştüğü noktaları görebilirsiniz. Böylece aramalarınızı ve indirmelerinizi buna göre planlayabilirsiniz.
+
+🏠 Hotspot için en iyi noktayı seçin
+   Telefonunuzu erişim noktası olarak kullanırken performans doğrudan sinyal gücüne bağlıdır. -105 dBm'den -85 dBm'ye çıkmak hızı birkaç kat artırabilir. Uygulama bunun gerçekleştiği yeri gösterir.
+
+🔋 Ani pil tüketimini açıklayın
+   Telefonunuz uzun süre -110 dBm civarında kalırsa, sürekli daha yüksek iletim gücü kullanır. Bu, pilin hızlı tükenmesinin ölçülebilir bir nedenidir.
+
+🏢 Bir binada çalışan tek noktayı bulun
+   Ofislerde, bodrumlarda veya asansörlerde sinyal birkaç metre içinde -75 dBm'den -115 dBm'ye değişebilir. Uygulama, tahmin yürütmek yerine en iyi kapsama noktasını bulmanıza yardımcı olur.
+
+📡 Sinyal iyileşmesini nesnel olarak doğrulayın
+   Bir sinyal tekrarlayıcı kurduktan veya pencereye yaklaştıktan sonra, örneğin -108 dBm'den -82 dBm'ye olan iyileşmeyi sayısal olarak doğrulayabilirsiniz.
+
+📶 Ne zaman Wi-Fi'a geçeceğinize karar verin
+   Hücresel sinyal -100 dBm seviyesinin altına düşerken Wi-Fi kullanılabiliyorsa, geçiş yapmak düşük hızları ve paket kayıplarını önleyebilir.
+
+🔄 Ağ koşullarını zaman içinde karşılaştırın
+   Sinyalin gün boyunca nasıl değiştiğini gözlemleyin. Belirli saatlerde düzenli düşüşler, kapsama sorunu yerine baz istasyonu yoğunluğunu gösterebilir.
+
+⚠ Yanıltıcı "tam sinyal" durumlarını belirleyin
+   Bazı telefonlar -95 dBm veya daha düşük seviyelerde bile yüksek sinyal çubukları gösterebilir. Gerçek değeri görmek, ekranın gösterdiğiyle performansın neden uyuşmadığını açıklar.
+
+📶 Kararsız sinyali sorun oluşmadan önce tespit edin
+   Android'deki sinyal çubukları standart değildir ve üretici ile operatör yapılandırmasına bağlıdır. Güçlü görünen bir sinyal bile -95 ile -105 dBm arasında kritik radyo koşullarına karşılık gelebilir. dBm, sinyal bozulmasını gerçek zamanlı gösterir.
+
+⚠ Sinyal sorunlarını ağ sorunlarından ayırın
+   Güçlü bir sinyal (örneğin -70 dBm) ile yavaş internet, genellikle operatör tarafındaki yoğunluğu gösterir. Zayıf sinyal (-105 dBm'nin altında) ise kapsama yetersizliğine işaret eder.
+
+Mobilosignal, güvenilir olmayan sinyal çubuklarını bağlantı kalitesi ve ağ sorunlarını analiz etmeye yardımcı olan sayısal verilerle değiştirerek Android telefonunuzu hassas bir sinyal ölçüm aracına dönüştürür.
+
+Eugen Barilyuk EB43 tarafından oluşturuldu https://eb43.github.io

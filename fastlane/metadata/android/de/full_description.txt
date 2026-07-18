@@ -1,0 +1,48 @@
+Mobilosignal zeigt die aktuelle Mobilfunk-Signalstärke Ihres Android-Smartphones in dBm an. Der Wert ist dauerhaft in der Statusleiste und in einer Benachrichtigung sichtbar, auch während Sie andere Apps verwenden.
+
+Im Gegensatz zu Signalbalken ist dBm eine exakte Messung der Funkfeldstärke. Dadurch erkennen Sie die tatsächliche Netzqualität statt einer vereinfachten Anzeige.
+
+Praktische Einsatzmöglichkeiten der dBm-Anzeige:
+
+📞 Verbindungsabbrüche vermeiden
+   Sinkt das Signal unter etwa -105 dBm, werden Telefonate instabil, obwohl noch Signalbalken angezeigt werden. Der dBm-Wert zeigt rechtzeitig, wann ein Standortwechsel sinnvoll ist.
+
+🎮 Weniger Lags beim mobilen Gaming
+   Unter etwa -95 dBm werden Online-Spiele häufig instabil. Mit der dBm-Anzeige finden Sie vor Spielbeginn einen besseren Standort.
+
+🎥 Stabiles Hochladen und Streaming
+   Live-Streams oder große Video-Uploads benötigen meist ein Signal besser als -90 dBm. So prüfen Sie vorab, ob die Verbindung ausreicht.
+
+🚗 Schwachstellen auf Pendelstrecken erkennen
+   Auf täglichen Fahrten sehen Sie genau, an welchen Stellen das Signal regelmäßig unter nutzbare Werte fällt. Dadurch lassen sich Telefonate und Downloads besser planen.
+
+🏠 Optimalen Standort für den Hotspot finden
+   Die Hotspot-Geschwindigkeit hängt direkt von der Signalstärke ab. Schon eine Verbesserung von -105 dBm auf -85 dBm kann die Datenrate deutlich erhöhen.
+
+🔋 Starken Akkuverbrauch erklären
+   Bei etwa -110 dBm erhöht das Smartphone dauerhaft seine Sendeleistung. Dies führt zu höherem Energieverbrauch und schnellerer Akkuentladung.
+
+🏢 Den besten Empfang im Gebäude finden
+   In Büros, Kellern oder Aufzügen kann das Signal innerhalb weniger Meter von -75 dBm auf -115 dBm schwanken. Die App zeigt den Standort mit dem besten Empfang.
+
+📡 Verbesserungen objektiv überprüfen
+   Nach dem Umstellen des Telefons oder der Nutzung eines Signalverstärkers lässt sich eine Verbesserung, z. B. von -108 dBm auf -82 dBm, eindeutig nachweisen.
+
+📶 Den richtigen Zeitpunkt für WLAN wählen
+   Fällt das Mobilfunksignal unter etwa -100 dBm, lohnt sich meist der Wechsel ins WLAN, um Geschwindigkeitseinbrüche und Paketverluste zu vermeiden.
+
+🔄 Signalverlauf im Tagesverlauf vergleichen
+   Beobachten Sie, wie sich die Signalstärke über den Tag verändert. Wiederkehrende Einbrüche können auf Netzüberlastung statt auf schlechte Abdeckung hinweisen.
+
+⚠ Irreführende Signalbalken erkennen
+   Manche Smartphones zeigen selbst bei -95 dBm oder schlechter noch viele Balken an. Der dBm-Wert erklärt, warum die tatsächliche Leistung davon abweicht.
+
+📶 Instabiles Signal frühzeitig erkennen
+   Signalbalken sind auf Android nicht standardisiert und hängen von Hersteller und Netzbetreiber ab. dBm zeigt den tatsächlichen Zustand der Funkverbindung in Echtzeit und warnt vor Verbindungsabbrüchen oder langsamer Datenübertragung.
+
+⚠ Signalprobleme von Netzproblemen unterscheiden
+  Ein starkes Signal (z. B. -70 dBm) bei langsamer Datenübertragung deutet auf Netzüberlastung hin. Ein schwaches Signal (unter -105 dBm) weist dagegen auf unzureichende Netzabdeckung hin.
+
+Mobilosignal verwandelt Ihr Android-Smartphone in ein präzises Werkzeug zur Messung der Mobilfunk-Signalstärke und ersetzt ungenaue Signalbalken durch objektive Messwerte.
+
+Erstellt von Eugen Barilyuk EB43 https://eb43.github.io

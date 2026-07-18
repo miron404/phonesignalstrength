@@ -1,0 +1,48 @@
+O Mobilosignal mostra, em tempo real, a intensidade do sinal da rede celular do seu telefone Android em dBm. O valor permanece sempre visível na barra de status e em uma notificação, mesmo enquanto você utiliza outros aplicativos.
+
+Ao contrário das barras de sinal, dBm é uma medição precisa da potência do sinal de rádio, permitindo visualizar as condições reais da rede em vez de uma estimativa simplificada.
+
+Usos práticos do monitoramento da intensidade do sinal em dBm:
+
+📞 Evite quedas de chamadas em áreas com sinal fraco
+   Se o sinal cair abaixo de aproximadamente -105 dBm, as chamadas de voz podem ficar instáveis, mesmo que as barras ainda apareçam. Ver isso antecipadamente permite mudar alguns metros de posição antes de ligar.
+
+🎮 Evite picos de latência em jogos móveis
+   Jogos online costumam ficar instáveis abaixo de -95 dBm. Monitorar o sinal ajuda a encontrar um local melhor antes de iniciar a partida, evitando atrasos e desconexões.
+
+🎥 Uploads e transmissões mais estáveis
+   Lives e envio de vídeos grandes normalmente exigem sinal melhor que -90 dBm. O valor em dBm permite confirmar se a conexão é suficiente antes de começar.
+
+🚗 Preveja perda de sinal em trajetos diários
+   Durante seus deslocamentos, você identifica os pontos onde o sinal cai regularmente abaixo de níveis utilizáveis. Assim, é possível planejar chamadas e downloads fora dessas áreas.
+
+🏠 Escolha o melhor local para usar o hotspot
+   O desempenho do hotspot depende diretamente da intensidade do sinal. Melhorar de -105 dBm para -85 dBm pode multiplicar a velocidade várias vezes. O aplicativo mostra exatamente onde isso acontece.
+
+🔋 Explique o consumo elevado de bateria
+   Se o telefone permanecer por muito tempo em torno de -110 dBm, ele aumenta continuamente a potência de transmissão. Isso causa maior consumo de bateria.
+
+🏢 Encontre o melhor ponto dentro de um prédio
+   Em escritórios, porões ou elevadores, o sinal pode variar de -75 dBm para -115 dBm em poucos metros. O aplicativo ajuda a localizar o ponto com melhor recepção.
+
+📡 Comprove objetivamente uma melhora no sinal
+   Após instalar um repetidor ou aproximar-se de uma janela, você pode confirmar numericamente uma melhoria, por exemplo de -108 dBm para -82 dBm, sem depender da impressão de que "parece melhor".
+
+📶 Decida quando mudar para o Wi-Fi
+   Se o sinal celular cair abaixo de aproximadamente -100 dBm e houver Wi-Fi disponível, a troca pode evitar lentidão e perda de pacotes.
+
+🔄 Compare as condições da rede ao longo do tempo
+   Observe como o sinal varia durante o dia. Quedas frequentes em determinados horários podem indicar congestionamento da rede, e não problemas de cobertura.
+
+⚠ Identifique falsas situações de "sinal cheio"
+   Alguns telefones exibem muitas barras mesmo com -95 dBm ou pior. Ver o valor real evita confiar em indicadores enganosos e explica por que o desempenho não corresponde ao mostrado na tela.
+
+📶 Detecte sinal instável antes das falhas
+   As barras de sinal do Android não são padronizadas e dependem do fabricante e da configuração da operadora. Um sinal visualmente forte ainda pode corresponder a condições críticas, entre -95 e -105 dBm. O valor em dBm revela a degradação do sinal em tempo real.
+
+⚠ Diferencie problemas de sinal de problemas da rede
+   Um sinal forte (por exemplo -70 dBm) com internet lenta normalmente indica congestionamento da operadora. Um sinal fraco (abaixo de -105 dBm) indica limitação de cobertura.
+
+O Mobilosignal transforma seu telefone Android em uma ferramenta precisa para medir a intensidade do sinal, substituindo barras pouco confiáveis por dados quantitativos para avaliar a conectividade e diagnosticar problemas de rede.
+
+Criado por Eugen Barilyuk EB43 https://eb43.github.io
