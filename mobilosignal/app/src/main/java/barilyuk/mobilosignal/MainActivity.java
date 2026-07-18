@@ -35,9 +35,12 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import androidx.core.content.ContextCompat;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
     private static final String PREF_NAME = "SIMSelection";
     private static final String PREF_SELECTED_SIM = "selected_sim";
 
@@ -71,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        checkNotificationPermission();
 
         // Autostart checkbox
         autostartCheckBox = findViewById(R.id.autostartCheckBox);
@@ -245,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
                 radioSim1.setTextColor(getResources().getColor(android.R.color.darker_gray));
             } else {
                 radioSim1.setAlpha(1.0f);
-                radioSim1.setTextColor(getResources().getColor(android.R.color.primary_text_light));
+                radioSim1.setTextColor(signalstrengthTextView.getCurrentTextColor());
             }
 
             if (!sim2Available) {
@@ -253,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
                 radioSim2.setTextColor(getResources().getColor(android.R.color.darker_gray));
             } else {
                 radioSim2.setAlpha(1.0f);
-                radioSim2.setTextColor(getResources().getColor(android.R.color.primary_text_light));
+                radioSim2.setTextColor(signalstrengthTextView.getCurrentTextColor());
             }
 
             // Auto-select based on availability and saved preference
@@ -595,6 +599,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            return;
+        }
+
         if (requestCode == PERMISSION_REQUEST_CODE) {
             boolean granted = true;
             for (int result : grantResults) {
@@ -631,6 +640,21 @@ public class MainActivity extends AppCompatActivity {
     private boolean hasPermissions() {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_PERMISSION_REQUEST_CODE
+                );
+            }
+        }
     }
 
     private void startSignalService() {

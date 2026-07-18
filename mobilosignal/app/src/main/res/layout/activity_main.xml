@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_centerHorizontal="true"
+    android:background="?android:colorBackground"
     android:padding="16dp">
 
 
@@ -85,7 +86,7 @@
             android:layout_below="@id/signalMarker"
             android:layout_marginTop="5dp"
             android:text=" XX dBm"
-            android:textColor="#0066FF"
+            android:textColor="?android:textColorPrimary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -231,7 +232,7 @@
         android:layout_height="wrap_content"
         android:text="Eugen Barilyuk\neb43.github.io"
         android:textAlignment="center"
-        android:textColor="#7B7F80"
+        android:textColor="?android:textColorSecondary"
         android:textSize="14sp"
         app:layout_constraintBottom_toTopOf="@+id/exitButton"
 
@@ -248,7 +249,6 @@
         android:autoSizeMaxTextSize="27sp"
         android:autoSizeMinTextSize="8sp"
         android:autoSizeTextType="uniform"
-        android:background="#BABABA"
         android:layoutDirection="inherit"
         android:padding="10dp"
         android:paddingStart="10dp"
