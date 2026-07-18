@@ -26,6 +26,7 @@ import android.annotation.TargetApi;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -36,6 +37,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import androidx.core.content.ContextCompat;
+import android.os.Handler;
+import android.os.Looper;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -655,6 +658,45 @@ public class MainActivity extends AppCompatActivity {
                 );
             }
         }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Notification permission required")
+                .setMessage(
+                        "MobiloSignal's key feature\n\n" +
+                                "Signal strength in the status bar\n\n" +
+                                "requires notification permission.\n\n" +
+                                "Please allow notifications for this app."
+                )
+                .setPositiveButton("OK", null)
+                .create();
+
+        dialog.show();
+
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        for (int i = 20; i >= 1; i--) {
+            final int seconds = i;
+            handler.postDelayed(() -> {
+                if (dialog.isShowing()) {
+                    dialog.setMessage(
+                            "MobiloSignal's key feature\n\n" +
+                                    "Signal strength in the status bar\n\n" +
+                                    "requires notification permission.\n\n" +
+                                    "Please allow notifications for this app.\n\n" +
+                                    "\n\n \n" +
+                                    "\n\n \n" +
+                                    "\n\n \n" +
+                                    "Automatically closes in: " + seconds + " s"
+                    );
+                }
+            }, (20 - i) * 1000L);
+        }
+
+        handler.postDelayed(() -> {
+            if (dialog.isShowing()) {
+                dialog.dismiss();
+            }
+        }, 20000);
     }
 
     private void startSignalService() {
