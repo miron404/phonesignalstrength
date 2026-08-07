@@ -54,20 +54,15 @@ public class MainActivity extends AppCompatActivity {
 
     private TelephonyManager telephonyManager;
     private SubscriptionManager subscriptionManager;
-    private List<PhoneStateListener> listeners = new ArrayList<>();
+    private final List<PhoneStateListener> listeners = new ArrayList<>();
 
-    private String sim1SignalText = "N/A";
-    private String sim2SignalText = "N/A";
-    private int sim1Dbm = -1;
-    private int sim2Dbm = -1;
-    private String sim1NetworkType = "0G";
-    private String sim2NetworkType = "0G";
-    private String sim1CarrierName = "";
-    private String sim2CarrierName = "";
-    private boolean sim1Available = false;
-    private boolean sim2Available = false;
+    private int sim1SubId = -1;
+    private int sim2SubId = -1;
 
     private SharedPreferences sharedPreferences;
+
+    // Listens for SIM subscription changes (SIM added/removed)
+    private SubscriptionManager.OnSubscriptionsChangedListener subscriptionsChangedListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,14 +97,18 @@ public class MainActivity extends AppCompatActivity {
         telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         subscriptionManager = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        // Listen for SIM subscription changes (e.g. SIM inserted/removed, radio on/off)
+        subscriptionsChangedListener = () -> {
+            Log.d("MainActivity", "Subscriptions changed, re-detecting SIMs");
+            runOnUiThread(this::refreshSimDetection);
+        };
 
+        if (hasPermissions()) {
+            startListening();
+        } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSION_REQUEST_CODE);
-        } else {
-            startListening();
         }
 
         // Initialize exit button
@@ -125,136 +124,184 @@ public class MainActivity extends AppCompatActivity {
         radioWhite.setChecked(!radioChosenBlack);
 
         // Set checkbox change listener for autostart
-        autostartCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putBoolean(AUTO_START_KEY, isChecked);
-                editor.apply();
-            }
+        autostartCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(AUTO_START_KEY, isChecked);
+            editor.apply();
         });
 
         // Set radio group change listener for text color
-        textColorRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                boolean isBlackSelected = (checkedId == R.id.radioBlack);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putBoolean(RADIO_CHOSEN_BLACK_KEY, isBlackSelected);
-                editor.apply();
-            }
+        textColorRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean isBlackSelected = (checkedId == R.id.radioBlack);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean(RADIO_CHOSEN_BLACK_KEY, isBlackSelected);
+            editor.apply();
         });
 
         // Exit button to kill notification service, activity, and fully exit the app
-        exitButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Stop the notification service
-                Intent serviceIntent = new Intent(MainActivity.this, SignalStrengthService.class);
-                stopService(serviceIntent);
+        exitButton.setOnClickListener(v -> {
+            Intent serviceIntent = new Intent(MainActivity.this, SignalStrengthService.class);
+            stopService(serviceIntent);
+            finish();
+            System.exit(0);
+        });
+    }
 
-                // Finish the activity
-                finish();
+    private void updateSimVisibility() {
+        // SIM1: always visible when available
+        boolean hasSim1 = sim1SubId != -1;
+        findViewById(R.id.sim1OperatorLabel).setVisibility(hasSim1 ? View.VISIBLE : View.GONE);
+        sim1OperatorName.setVisibility(hasSim1 ? View.VISIBLE : View.GONE);
+        tvSim1Signal.setVisibility(hasSim1 ? View.VISIBLE : View.GONE);
+        findViewById(R.id.sim1IndicatorContainer).setVisibility(hasSim1 ? View.VISIBLE : View.GONE);
 
-                // Fully exit the app
-                System.exit(0);
+        // SIM2: only visible when available
+        boolean hasSim2 = sim2SubId != -1;
+        findViewById(R.id.sim2OperatorLabel).setVisibility(hasSim2 ? View.VISIBLE : View.GONE);
+        sim2OperatorName.setVisibility(hasSim2 ? View.VISIBLE : View.GONE);
+        tvSim2Signal.setVisibility(hasSim2 ? View.VISIBLE : View.GONE);
+        findViewById(R.id.sim2IndicatorContainer).setVisibility(hasSim2 ? View.VISIBLE : View.GONE);
+
+        Log.d("MainActivity", "SIM visibility: SIM1=" + hasSim1 + " SIM2=" + hasSim2);
+    }
+
+    /**
+     * Re-detect SIMs without tearing down listeners that haven't changed.
+     * Called on subscription change or initial setup.
+     */
+    private void refreshSimDetection() {
+        if (!hasPermissions()) return;
+
+        List<SubscriptionInfo> activeSubs = subscriptionManager.getActiveSubscriptionInfoList();
+        if (activeSubs == null) activeSubs = new ArrayList<>();
+
+        // Find which subscription IDs are currently active
+        java.util.Set<Integer> activeSubIds = new java.util.HashSet<>();
+        for (SubscriptionInfo si : activeSubs) {
+            activeSubIds.add(si.getSubscriptionId());
+        }
+
+        // Remove listeners for SIMs that are no longer active
+        java.util.Iterator<PhoneStateListener> iter = listeners.iterator();
+        while (iter.hasNext()) {
+            PhoneStateListener l = iter.next();
+            // We can't easily get the subId from a listener, so we'll clean up
+            // inactive ones based on our simStates tracking
+        }
+
+        // Check if our tracked SIMs are still active
+        boolean sim1StillThere = sim1SubId != -1 && activeSubIds.contains(sim1SubId);
+        boolean sim2StillThere = sim2SubId != -1 && activeSubIds.contains(sim2SubId);
+
+        if (!sim1StillThere) sim1SubId = -1;
+        if (!sim2StillThere) sim2SubId = -1;
+
+        // Assign new SIMs to available slots
+        for (SubscriptionInfo si : activeSubs) {
+            int subId = si.getSubscriptionId();
+            int slotIndex = si.getSimSlotIndex();
+
+            // Skip if already tracked
+            if (subId == sim1SubId || subId == sim2SubId) continue;
+
+            if (sim1SubId == -1) {
+                sim1SubId = subId;
+                setupSimListener(subId, slotIndex, 0);
+            } else if (sim2SubId == -1) {
+                sim2SubId = subId;
+                setupSimListener(subId, slotIndex, 1);
             }
+        }
+
+        updateSimVisibility();
+
+        // If no SIMs at all, show a message
+        if (sim1SubId == -1 && sim2SubId == -1) {
+            tvSim1Signal.setText("\uD83D\uDCF6 N/A");
+            sim1OperatorName.setText("---");
+            Toast.makeText(this, "No active SIM cards found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setupSimListener(int subscriptionId, int slotIndex, int displaySlot) {
+        TelephonyManager tmForSim = telephonyManager.createForSubscriptionId(subscriptionId);
+
+        // Get operator name
+        CharSequence carrierName = null;
+        List<SubscriptionInfo> subs = subscriptionManager.getActiveSubscriptionInfoList();
+        if (subs != null) {
+            for (SubscriptionInfo si : subs) {
+                if (si.getSubscriptionId() == subscriptionId) {
+                    carrierName = si.getCarrierName();
+                    break;
+                }
+            }
+        }
+        String operatorName = (carrierName != null && carrierName.length() > 0)
+                ? carrierName.toString()
+                : tmForSim.getSimOperatorName();
+
+        final String opName = (operatorName == null || operatorName.isEmpty()) ? "SIM " + (displaySlot + 1) : operatorName;
+
+        runOnUiThread(() -> {
+            if (displaySlot == 0) {
+                sim1OperatorName.setText(opName);
+            } else {
+                sim2OperatorName.setText(opName);
+            }
+            updateSimVisibility();
         });
 
-        // Initially hide SIM2 section until we know it's available
-        hideSim2Section();
-    }
+        PhoneStateListener listener = new PhoneStateListener() {
+            @Override
+            public void onSignalStrengthsChanged(@NonNull SignalStrength signalStrength) {
+                super.onSignalStrengthsChanged(signalStrength);
 
-    private void hideSim2Section() {
-        findViewById(R.id.sim2OperatorLabel).setVisibility(View.GONE);
-        sim2OperatorName.setVisibility(View.GONE);
-        tvSim2Signal.setVisibility(View.GONE);
-        findViewById(R.id.sim2IndicatorContainer).setVisibility(View.GONE);
-    }
+                int dbm;
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
+                    dbm = getDbmFromSignalStrength(signalStrength);
+                } else {
+                    dbm = extractDbm(signalStrength);
+                }
 
-    private void showSim2Section() {
-        findViewById(R.id.sim2OperatorLabel).setVisibility(View.VISIBLE);
-        sim2OperatorName.setVisibility(View.VISIBLE);
-        tvSim2Signal.setVisibility(View.VISIBLE);
-        findViewById(R.id.sim2IndicatorContainer).setVisibility(View.VISIBLE);
+                String networkType = getNetworkTypeForSim(tmForSim, slotIndex);
+
+                runOnUiThread(() -> {
+                    String signalText = "\uD83D\uDCF6 " + (dbm == -1 ? "-0 dBm 0G" : dbm + " dBm " + networkType);
+
+                    if (displaySlot == 0) {
+                        tvSim1Signal.setText(signalText);
+                        updateSim1SignalIndicator(dbm);
+                    } else {
+                        tvSim2Signal.setText(signalText);
+                        updateSim2SignalIndicator(dbm);
+                    }
+                });
+            }
+        };
+
+        listeners.add(listener);
+        tmForSim.listen(listener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        Log.d("MainActivity", "Listener set up for subId=" + subscriptionId + " slot=" + slotIndex + " display=" + displaySlot);
     }
 
     private void startListening() {
-        List<SubscriptionInfo> subscriptionInfoList = subscriptionManager.getActiveSubscriptionInfoList();
-
-        if (subscriptionInfoList == null || subscriptionInfoList.isEmpty()) {
-            Toast.makeText(this, "No active SIM cards found", Toast.LENGTH_SHORT).show();
-            return;
+        if (subscriptionManager != null) {
+            subscriptionManager.addOnSubscriptionsChangedListener(subscriptionsChangedListener);
         }
+        refreshSimDetection();
+    }
 
-        // Reset availability flags
-        sim1Available = false;
-        sim2Available = false;
-
-        for (SubscriptionInfo subscriptionInfo : subscriptionInfoList) {
-            int subscriptionId = subscriptionInfo.getSubscriptionId();
-            int simSlotIndex = subscriptionInfo.getSimSlotIndex(); // 0 for SIM1, 1 for SIM2
-            TelephonyManager tmForSim = telephonyManager.createForSubscriptionId(subscriptionId);
-
-            // Get carrier/operator name
-            CharSequence carrierName = subscriptionInfo.getCarrierName();
-            String operatorName = (carrierName != null && carrierName.length() > 0)
-                    ? carrierName.toString()
-                    : tmForSim.getSimOperatorName();
-
-            // Mark SIM as available and set operator name
-            if (simSlotIndex == 0) {
-                sim1Available = true;
-                sim1CarrierName = operatorName;
-                runOnUiThread(() -> sim1OperatorName.setText(operatorName));
-            } else if (simSlotIndex == 1) {
-                sim2Available = true;
-                sim2CarrierName = operatorName;
-                runOnUiThread(() -> {
-                    sim2OperatorName.setText(operatorName);
-                    showSim2Section();
-                });
-            }
-
-            PhoneStateListener listener = new PhoneStateListener() {
-                @Override
-                public void onSignalStrengthsChanged(@NonNull SignalStrength signalStrength) {
-                    super.onSignalStrengthsChanged(signalStrength);
-
-                    int dbm;
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) { // Android 8 and earlier
-                        dbm = getDbmFromSignalStrength(signalStrength);
-                    } else {
-                        dbm = extractDbm(signalStrength);
-                    }
-
-                    // Use the improved network type detection
-                    String networkType = getNetworkTypeForSim(tmForSim, simSlotIndex);
-
-                    runOnUiThread(() -> {
-                        String displayText = (dbm == -1 ? "N/A" : dbm + " dBm " + networkType);
-                        String signalText = "📶 " + (dbm == -1 ? "-0 dBm 0G" : dbm + " dBm " + networkType);
-
-                        if (simSlotIndex == 0) {
-                            tvSim1Signal.setText(signalText);
-                            sim1SignalText = signalText;
-                            sim1Dbm = dbm;
-                            sim1NetworkType = networkType;
-                            updateSim1SignalIndicator(dbm);
-                        } else if (simSlotIndex == 1) {
-                            tvSim2Signal.setText(signalText);
-                            sim2SignalText = signalText;
-                            sim2Dbm = dbm;
-                            sim2NetworkType = networkType;
-                            updateSim2SignalIndicator(dbm);
-                        }
-                    });
-                }
-            };
-
-            listeners.add(listener); // Store listener to prevent garbage collection
-            tmForSim.listen(listener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+    private void stopListening() {
+        if (subscriptionManager != null && subscriptionsChangedListener != null) {
+            subscriptionManager.removeOnSubscriptionsChangedListener(subscriptionsChangedListener);
         }
+        for (PhoneStateListener listener : listeners) {
+            telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE);
+        }
+        listeners.clear();
+        sim1SubId = -1;
+        sim2SubId = -1;
     }
 
     private void updateSim1SignalIndicator(int dbmValue) {
@@ -266,17 +313,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateSignalIndicator(View marker, TextView dbmText, View gradientBar, int dbmValue) {
-        // Update dBm text display
         if (dbmValue == -1) {
             dbmText.setText("-- dBm");
         } else {
             dbmText.setText(dbmValue + " dBm");
         }
 
-        // Calculate position on gradient bar (-120 dBm = left, -50 dBm = right)
         float position = calculateMarkerPosition(dbmValue);
 
-        // Update marker position
         gradientBar.post(() -> {
             dbmText.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
 
@@ -284,20 +328,18 @@ public class MainActivity extends AppCompatActivity {
             int markerWidth = marker.getWidth();
             int textWidth = dbmText.getMeasuredWidth();
 
-            // Calculate the actual position considering marker width
+            if (barWidth <= 0 || markerWidth <= 0) return; // Not laid out yet
+
             int markerX = (int) (position * (barWidth - markerWidth));
 
-            // Set marker position
             RelativeLayout.LayoutParams markerParams = (RelativeLayout.LayoutParams) marker.getLayoutParams();
             markerParams.leftMargin = markerX;
             marker.setLayoutParams(markerParams);
 
-            // Calculate text position to keep it centered under marker but within bounds
             int idealTextX = markerX + (markerWidth / 2) - (textWidth / 2);
             int minTextX = 0;
             int maxTextX = barWidth - textWidth;
 
-            // Clamp text position within bounds
             int finalTextX = Math.max(minTextX, Math.min(maxTextX, idealTextX));
 
             RelativeLayout.LayoutParams textParams = (RelativeLayout.LayoutParams) dbmText.getLayoutParams();
@@ -308,50 +350,10 @@ public class MainActivity extends AppCompatActivity {
 
     private float calculateMarkerPosition(int dbmValue) {
         if (dbmValue == -1) {
-            return 0.0f; // Default to left position for invalid values
+            return 0.0f;
         }
-
-        // Clamp dBm value between -120 and -50
         int clampedDbm = Math.max(-120, Math.min(-50, dbmValue));
-
-        // Calculate position as percentage (0.0 = left, 1.0 = right)
-        // -120 dBm = 0.0 (left), -50 dBm = 1.0 (right)
-        float position = (clampedDbm + 120) / 70.0f;
-
-        return position;
-    }
-
-    private String getNetworkType(TelephonyManager tm) {
-        try {
-            int networkType = TelephonyManager.NETWORK_TYPE_UNKNOWN;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Android 11+ (API 30+)
-                networkType = tm.getDataNetworkType();
-
-                // If data network type is unknown, try voice network type as fallback
-                if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
-                    networkType = tm.getVoiceNetworkType();
-                }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7+ (API 24+)
-                networkType = tm.getDataNetworkType();
-
-                // If data network type is unknown, try the legacy getNetworkType
-                if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
-                    networkType = tm.getNetworkType();
-                }
-            } else {
-                // Android 6 and below
-                networkType = tm.getNetworkType();
-            }
-
-            return getNetworkTypeString(networkType);
-
-        } catch (Exception e) {
-            Log.e("NetworkType", "Error getting network type", e);
-            return "0G";
-        }
+        return (clampedDbm + 120) / 70.0f;
     }
 
     private String getNetworkTypeForSim(TelephonyManager tm, int simSlotIndex) {
@@ -359,47 +361,34 @@ public class MainActivity extends AppCompatActivity {
             int networkType = TelephonyManager.NETWORK_TYPE_UNKNOWN;
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Try to get the most accurate network type for this SIM
                 networkType = tm.getDataNetworkType();
-
-                // For dual SIM, if this SIM is not the data SIM, try voice network type
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN ||
                         (isDualSim() && !isDataSim(tm))) {
                     networkType = tm.getVoiceNetworkType();
                 }
-
-                // If still unknown, try service state
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                     networkType = getNetworkTypeFromServiceState(tm);
                 }
-
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 networkType = tm.getDataNetworkType();
-
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                     networkType = tm.getNetworkType();
                 }
-
             } else {
                 networkType = tm.getNetworkType();
             }
 
             return getNetworkTypeString(networkType);
-
         } catch (Exception e) {
             Log.e("NetworkType", "Error getting network type for SIM " + simSlotIndex, e);
             return "0G";
         }
     }
 
-    // Helper method to check if this TelephonyManager instance is for the data SIM
     private boolean isDataSim(TelephonyManager tm) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                SubscriptionManager subManager = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
                 int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
-
-                // Get the subscription ID for this TelephonyManager instance
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     return tm.getSubscriptionId() == dataSubId;
                 }
@@ -407,25 +396,22 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("NetworkType", "Error checking if data SIM", e);
         }
-        return true; // Default to true if we can't determine
+        return true;
     }
 
-    // Helper method to check if device has dual SIM
     private boolean isDualSim() {
         try {
-            List<SubscriptionInfo> subscriptionInfoList = subscriptionManager.getActiveSubscriptionInfoList();
-            return subscriptionInfoList != null && subscriptionInfoList.size() > 1;
+            List<SubscriptionInfo> subs = subscriptionManager.getActiveSubscriptionInfoList();
+            return subs != null && subs.size() > 1;
         } catch (Exception e) {
             return false;
         }
     }
 
-    // Helper method to get network type from service state (Android 11+)
     @TargetApi(Build.VERSION_CODES.R)
     private int getNetworkTypeFromServiceState(TelephonyManager tm) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // This requires additional permissions and might not work on all devices
                 return tm.getVoiceNetworkType();
             }
         } catch (Exception e) {
@@ -461,12 +447,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // For Android 9+ (API 28 and above)
     private int extractDbm(SignalStrength signalStrength) {
         try {
             List<CellSignalStrength> strengths = signalStrength.getCellSignalStrengths();
             if (strengths != null && !strengths.isEmpty()) {
-                return strengths.get(0).getDbm(); // Use the first signal
+                return strengths.get(0).getDbm();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -474,7 +459,6 @@ public class MainActivity extends AppCompatActivity {
         return -1;
     }
 
-    // For Android 8 and below
     private int getDbmFromSignalStrength(SignalStrength signalStrength) {
         if (signalStrength == null) return -1;
 
@@ -485,16 +469,12 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             int cdmaDbm = signalStrength.getCdmaDbm();
-            if (cdmaDbm != 0) {
-                return cdmaDbm;
-            }
+            if (cdmaDbm != 0) return cdmaDbm;
         } catch (Exception ignored) {}
 
         try {
             int evdoDbm = signalStrength.getEvdoDbm();
-            if (evdoDbm != 0) {
-                return evdoDbm;
-            }
+            if (evdoDbm != 0) return evdoDbm;
         } catch (Exception ignored) {}
 
         return -1;
@@ -503,11 +483,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Clean up listeners when activity is destroyed
-        for (PhoneStateListener listener : listeners) {
-            telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE);
-        }
-        listeners.clear();
+        stopListening();
     }
 
     @Override
@@ -521,7 +497,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
-
             if (granted) {
                 startListening();
                 startSignalService();
@@ -534,16 +509,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Start the notification service when app becomes active
         if (hasPermissions()) {
             startSignalService();
+            // Re-detect SIMs on resume (may have changed while in background)
+            refreshSimDetection();
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Keep service running when app goes to background
     }
 
     private boolean hasPermissions() {
