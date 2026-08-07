@@ -48,17 +48,21 @@ jobs:
           echo "::add-mask::${STORE_PASS}"
           echo "::add-mask::${KEY_PASS}"
 
+          # Use JKS to avoid JDK 17 PKCS12 PBES2 padding bug
           keytool -genkeypair -v \
             -keystore "${KEYSTORE_FILE}" \
-            -storetype PKCS12 \
+            -storetype JKS \
             -alias "${KEY_ALIAS}" \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "${STORE_PASS}" -keypass "${KEY_PASS}" \
             -dname "CN=CI, OU=CI, O=CI, L=CI, S=CI, C=XX"
 
-          # Verify keystore is readable with these passwords
+          # Verify keystore: list entries AND export cert (tests both passwords)
           echo "::group::Verify keystore"
-          keytool -list -keystore "${KEYSTORE_FILE}" -storepass "${STORE_PASS}" -storetype PKCS12
+          keytool -list -keystore "${KEYSTORE_FILE}" -storepass "${STORE_PASS}" -storetype JKS
+          keytool -exportcert -keystore "${KEYSTORE_FILE}" -storepass "${STORE_PASS}" \
+            -alias "${KEY_ALIAS}" -keypass "${KEY_PASS}" -storetype JKS -file /dev/null \
+            && echo "Keystore verified OK"
           echo "::endgroup::"
 
           cat > keystore.properties <<PROPEOF
@@ -98,6 +102,7 @@ jobs:
 
           "${APKSIGNER}" sign \
             --ks "${KS_FILE}" \
+            --ks-type JKS \
             --ks-pass "pass:${KS_PASS}" \
             --ks-key-alias "${KS_ALIAS}" \
             --key-pass "pass:${KS_KEYPASS}" \
