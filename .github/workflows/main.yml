@@ -54,7 +54,7 @@ jobs:
             -alias "${KEY_ALIAS}" \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "${STORE_PASS}" -keypass "${KEY_PASS}" \
-            -dname "CN=Ephemeral Build, OU=CI, O=CI, L=CI, S=CI, C=XX"
+            -dname "CN=CI, OU=CI, O=CI, L=CI, S=CI, C=XX"
 
           cat > keystore.properties <<PROPEOF
           KEYSTORE_FILE=${KEYSTORE_FILE}
@@ -63,27 +63,43 @@ jobs:
           KEY_PASSWORD=${KEY_PASS}
           PROPEOF
 
+      # Python читает keystore.properties и вшивает значения напрямую
+      # в build.gradle строковыми литералами — никаких Properties.load()
+      # и System.getenv() на стороне Gradle.
       - name: Wire signing config into build.gradle
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
         run: |
-          python3 - "${BUILD_TYPE}" <<'EOF'
+          python3 - "${BUILD_TYPE}" <<'PYEOF'
           import re, sys
 
           build_type = sys.argv[1]
+
+          # Read keystore properties
+          props = {}
+          with open("keystore.properties") as f:
+              for line in f:
+                  line = line.strip()
+                  if line and '=' in line:
+                      k, v = line.split('=', 1)
+                      props[k.strip()] = v.strip()
+
+          ks_file = props['KEYSTORE_FILE']
+          ks_pass = props['KEYSTORE_PASSWORD']
+          ks_alias = props['KEY_ALIAS']
+          ks_keypass = props['KEY_PASSWORD']
+
           path = "app/build.gradle"
           with open(path) as f:
               content = f.read()
 
-          signing_configs_block = '''    signingConfigs {
-                  ci {
-                      def props = new Properties()
-                      rootProject.file('keystore.properties').withInputStream { props.load(it) }
-                      storeFile rootProject.file(props['KEYSTORE_FILE'])
-                      storePassword props['KEYSTORE_PASSWORD']
-                      keyAlias props['KEY_ALIAS']
-                      keyPassword props['KEY_PASSWORD']
-                  }
-              }
+          signing_configs_block = f'''    signingConfigs {{
+                  ci {{
+                      storeFile rootProject.file("{ks_file}")
+                      storePassword "{ks_pass}"
+                      keyAlias "{ks_alias}"
+                      keyPassword "{ks_keypass}"
+                  }}
+              }}
           '''
 
           content = content.replace(
@@ -118,7 +134,7 @@ jobs:
 
           print(f"--- patched {path} ---")
           print(content)
-          EOF
+          PYEOF
         env:
           BUILD_TYPE: ${{ inputs.build_type }}
 
