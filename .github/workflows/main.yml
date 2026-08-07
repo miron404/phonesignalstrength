@@ -104,18 +104,32 @@ jobs:
               1,
           )
 
-          # Привязываем signingConfig к нужному buildType.
-          # У 'release' уже есть тело блока; у 'debug' по умолчанию тела нет,
-          # поэтому обрабатываем оба случая.
-          pattern_with_body = re.compile(rf"({build_type}\s*\{{)")
-          if f"{build_type} {{" in content:
-              content = pattern_with_body.sub(
-                  lambda m: m.group(1) + f"\n            signingConfig signingConfigs.{build_type}",
-                  content,
-                  count=1,
+          # Дальше работаем ТОЛЬКО с текстом после "buildTypes {", чтобы не
+          # зацепить debug{}/release{} из только что вставленного signingConfigs.
+          bt_match = re.search(r"buildTypes\s*\{", content)
+          if not bt_match:
+              raise SystemExit(f"'buildTypes {{' block not found in {path}")
+          bt_start = bt_match.end()
+
+          head, tail = content[:bt_start], content[bt_start:]
+
+          existing_block = re.search(rf"\b{build_type}\s*\{{", tail)
+          if existing_block:
+              # Блок для этого buildType уже есть (например release {}) — дописываем
+              # signingConfig первой строкой внутри него.
+              insert_at = existing_block.end()
+              tail = (
+                  tail[:insert_at]
+                  + f"\n            signingConfig signingConfigs.{build_type}"
+                  + tail[insert_at:]
               )
           else:
-              raise SystemExit(f"buildType '{build_type}' block not found in {path}")
+              # Такого buildType в файле нет (обычно это debug — AGP создаёт его
+              # неявно) — добавляем целый новый блок сразу после "buildTypes {".
+              new_block = f"\n        {build_type} {{\n            signingConfig signingConfigs.{build_type}\n        }}\n"
+              tail = new_block + tail
+
+          content = head + tail
 
           with open(path, "w") as f:
               f.write(content)
