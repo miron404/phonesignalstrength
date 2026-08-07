@@ -13,7 +13,6 @@ on:
           - debug
           - release
 
-# Корень gradle-проекта внутри репозитория (см. layout Eb43/phonesignalstrength)
 env:
   GRADLE_PROJECT_DIR: mobilosignal
 
@@ -23,11 +22,6 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        # Если этот workflow лежит в отдельном репозитории, а не в форке
-        # Eb43/phonesignalstrength — раскомментируй и укажи источник:
-        # with:
-        #   repository: Eb43/phonesignalstrength
-        #   ref: main
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -42,43 +36,41 @@ jobs:
         run: chmod +x gradlew
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
 
-      # Генерируем одноразовый keystore со случайным паролем/алиасом.
-      # Файл существует только в рамках этого запуска раннера и нигде не публикуется.
+      # Генерируем одноразовый keystore. Пароли в hex — без спецсимволов,
+      # которые могли бы сломать $GITHUB_ENV или ::add-mask::.
       - name: Generate ephemeral signing key
         id: gen_key
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
         run: |
           set -euo pipefail
 
-          STORE_PASS=$(openssl rand -base64 32 | tr -d '\n')
-          KEY_PASS=$(openssl rand -base64 32 | tr -d '\n')
+          STORE_PASS="$(openssl rand -hex 32)"
+          KEY_PASS="$(openssl rand -hex 32)"
           KEY_ALIAS="key-$(openssl rand -hex 4)"
           KEYSTORE_PATH="${{ github.workspace }}/${{ env.GRADLE_PROJECT_DIR }}/ephemeral.keystore"
 
-          # маскируем секреты в логах
-          echo "::add-mask::$STORE_PASS"
-          echo "::add-mask::$KEY_PASS"
+          echo "::add-mask::${STORE_PASS}"
+          echo "::add-mask::${KEY_PASS}"
 
           keytool -genkeypair -v \
-            -keystore "$KEYSTORE_PATH" \
-            -alias "$KEY_ALIAS" \
+            -keystore "${KEYSTORE_PATH}" \
+            -storetype PKCS12 \
+            -alias "${KEY_ALIAS}" \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "$STORE_PASS" -keypass "$KEY_PASS" \
+            -storepass "${STORE_PASS}" -keypass "${KEY_PASS}" \
             -dname "CN=Ephemeral Build, OU=CI, O=CI, L=CI, S=CI, C=XX"
 
-          {
-            echo "KEYSTORE_PATH=$KEYSTORE_PATH"
-            echo "KEYSTORE_PASSWORD=$STORE_PASS"
-            echo "KEY_ALIAS=$KEY_ALIAS"
-            echo "KEY_PASSWORD=$KEY_PASS"
-          } >> "$GITHUB_ENV"
+          printf 'KEYSTORE_PATH=%s\n' "${KEYSTORE_PATH}" >> "$GITHUB_ENV"
+          printf 'KEYSTORE_PASSWORD=%s\n' "${STORE_PASS}" >> "$GITHUB_ENV"
+          printf 'KEY_ALIAS=%s\n' "${KEY_ALIAS}" >> "$GITHUB_ENV"
+          printf 'KEY_PASSWORD=%s\n' "${KEY_PASS}" >> "$GITHUB_ENV"
 
       # Патчим app/build.gradle: добавляем signingConfigs и привязываем
-      # его к нужному buildType (debug или release) — в исходнике этого нет.
+      # его к нужному buildType (debug или release).
       - name: Wire signing config into build.gradle
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
         run: |
-          python3 - "$BUILD_TYPE" <<'EOF'
+          python3 - "${BUILD_TYPE}" <<'EOF'
           import re, sys
 
           build_type = sys.argv[1]
@@ -104,8 +96,7 @@ jobs:
               1,
           )
 
-          # Дальше работаем ТОЛЬКО с текстом после "buildTypes {", чтобы не
-          # зацепить debug{}/release{} из только что вставленного signingConfigs.
+          # Работаем с текстом после "buildTypes {"
           bt_match = re.search(r"buildTypes\s*\{", content)
           if not bt_match:
               raise SystemExit(f"'buildTypes {{' block not found in {path}")
@@ -115,8 +106,6 @@ jobs:
 
           existing_block = re.search(rf"\b{build_type}\s*\{{", tail)
           if existing_block:
-              # Блок для этого buildType уже есть (например release {}) — дописываем
-              # signingConfig первой строкой внутри него.
               insert_at = existing_block.end()
               tail = (
                   tail[:insert_at]
@@ -124,8 +113,6 @@ jobs:
                   + tail[insert_at:]
               )
           else:
-              # Такого buildType в файле нет (обычно это debug — AGP создаёт его
-              # неявно) — добавляем целый новый блок сразу после "buildTypes {".
               new_block = f"\n        {build_type} {{\n            signingConfig signingConfigs.{build_type}\n        }}\n"
               tail = new_block + tail
 
@@ -143,12 +130,12 @@ jobs:
       - name: Build debug APK
         if: ${{ inputs.build_type == 'debug' }}
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Build release APK
         if: ${{ inputs.build_type == 'release' }}
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Locate APK
         id: find_apk
