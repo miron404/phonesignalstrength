@@ -35,7 +35,7 @@ jobs:
         run: chmod +x gradlew
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
 
-      - name: Generate ephemeral signing key + keystore.properties
+      - name: Generate ephemeral signing key
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
         run: |
           set -euo pipefail
@@ -56,6 +56,11 @@ jobs:
             -storepass "${STORE_PASS}" -keypass "${KEY_PASS}" \
             -dname "CN=CI, OU=CI, O=CI, L=CI, S=CI, C=XX"
 
+          # Verify keystore is readable with these passwords
+          echo "::group::Verify keystore"
+          keytool -list -keystore "${KEYSTORE_FILE}" -storepass "${STORE_PASS}" -storetype PKCS12
+          echo "::endgroup::"
+
           cat > keystore.properties <<PROPEOF
           KEYSTORE_FILE=${KEYSTORE_FILE}
           KEYSTORE_PASSWORD=${STORE_PASS}
@@ -63,90 +68,49 @@ jobs:
           KEY_PASSWORD=${KEY_PASS}
           PROPEOF
 
-      # Python читает keystore.properties и вшивает значения напрямую
-      # в build.gradle строковыми литералами — никаких Properties.load()
-      # и System.getenv() на стороне Gradle.
-      - name: Wire signing config into build.gradle
+      - name: Build unsigned APK
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
         run: |
-          python3 - "${BUILD_TYPE}" <<'PYEOF'
-          import re, sys
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace
+          else
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          fi
 
-          build_type = sys.argv[1]
-
-          # Read keystore properties
-          props = {}
-          with open("keystore.properties") as f:
-              for line in f:
-                  line = line.strip()
-                  if line and '=' in line:
-                      k, v = line.split('=', 1)
-                      props[k.strip()] = v.strip()
-
-          ks_file = props['KEYSTORE_FILE']
-          ks_pass = props['KEYSTORE_PASSWORD']
-          ks_alias = props['KEY_ALIAS']
-          ks_keypass = props['KEY_PASSWORD']
-
-          path = "app/build.gradle"
-          with open(path) as f:
-              content = f.read()
-
-          signing_configs_block = f'''    signingConfigs {{
-                  ci {{
-                      storeFile rootProject.file("{ks_file}")
-                      storePassword "{ks_pass}"
-                      keyAlias "{ks_alias}"
-                      keyPassword "{ks_keypass}"
-                  }}
-              }}
-          '''
-
-          content = content.replace(
-              "android {\n",
-              "android {\n" + signing_configs_block,
-              1,
-          )
-
-          bt_match = re.search(r"buildTypes\s*\{", content)
-          if not bt_match:
-              raise SystemExit(f"'buildTypes {{' block not found in {path}")
-          bt_start = bt_match.end()
-
-          head, tail = content[:bt_start], content[bt_start:]
-
-          existing_block = re.search(rf"\b{build_type}\s*\{{", tail)
-          if existing_block:
-              insert_at = existing_block.end()
-              tail = (
-                  tail[:insert_at]
-                  + "\n            signingConfig signingConfigs.ci"
-                  + tail[insert_at:]
-              )
-          else:
-              new_block = f"\n        {build_type} {{\n            signingConfig signingConfigs.ci\n        }}\n"
-              tail = new_block + tail
-
-          content = head + tail
-
-          with open(path, "w") as f:
-              f.write(content)
-
-          print(f"--- patched {path} ---")
-          print(content)
-          PYEOF
-        env:
-          BUILD_TYPE: ${{ inputs.build_type }}
-
-      - name: Build debug APK
-        if: ${{ inputs.build_type == 'debug' }}
+      - name: Sign APK with apksigner
         working-directory: ${{ env.GRADLE_PROJECT_DIR }}
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          # Read values back from keystore.properties
+          KS_FILE=$(grep KEYSTORE_FILE keystore.properties | cut -d= -f2)
+          KS_PASS=$(grep KEYSTORE_PASSWORD keystore.properties | cut -d= -f2)
+          KS_ALIAS=$(grep KEY_ALIAS keystore.properties | cut -d= -f2)
+          KS_KEYPASS=$(grep KEY_PASSWORD keystore.properties | cut -d= -f2)
 
-      - name: Build release APK
-        if: ${{ inputs.build_type == 'release' }}
-        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+          APKSIGNER=$(find "${ANDROID_SDK_ROOT}/build-tools" -name apksigner -type f | sort -r | head -n1)
+          echo "Using apksigner: ${APKSIGNER}"
+
+          APK_DIR="app/build/outputs/apk/${{ inputs.build_type }}"
+          UNSIGNED_APK=$(find "${APK_DIR}" -name "*.apk" | head -n1)
+          SIGNED_APK="${UNSIGNED_APK%.apk}-signed.apk"
+
+          echo "Unsigned: ${UNSIGNED_APK}"
+          echo "Signed:   ${SIGNED_APK}"
+
+          "${APKSIGNER}" sign \
+            --ks "${KS_FILE}" \
+            --ks-pass "pass:${KS_PASS}" \
+            --ks-key-alias "${KS_ALIAS}" \
+            --key-pass "pass:${KS_KEYPASS}" \
+            --out "${SIGNED_APK}" \
+            "${UNSIGNED_APK}"
+
+          echo "::group::Verify signed APK"
+          "${APKSIGNER}" verify --verbose "${SIGNED_APK}"
+          echo "::endgroup::"
+
+          # Replace unsigned with signed so artifact upload picks it up
+          rm "${UNSIGNED_APK}"
+          mv "${SIGNED_APK}" "${UNSIGNED_APK}"
 
       - name: Locate APK
         id: find_apk
