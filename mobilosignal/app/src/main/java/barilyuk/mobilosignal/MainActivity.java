@@ -31,19 +31,20 @@ import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST_CODE = 100;
     private static final String PREF_NAME = "SIMSelection";
-    private static final String PREF_SELECTED_SIM = "selected_sim";
 
-    private TextView tvSim1Signal, tvSim2Signal, signalstrengthTextView;
-    private RadioGroup simSelectionRadioGroup;
-    private RadioButton radioSim1, radioSim2;
+    // SIM 1 views
+    private TextView tvSim1Signal, sim1OperatorName, sim1DbmText;
+    private View sim1Marker, sim1GradientBar;
+
+    // SIM 2 views
+    private TextView tvSim2Signal, sim2OperatorName, sim2DbmText;
+    private View sim2Marker, sim2GradientBar;
+
     private CheckBox autostartCheckBox;
     private static final String AUTO_START_KEY = "AutoStart";
     private RadioGroup textColorRadioGroup;
@@ -51,17 +52,18 @@ public class MainActivity extends AppCompatActivity {
     private RadioButton radioWhite;
     private static final String RADIO_CHOSEN_BLACK_KEY = "RadioChosenBlack";
 
-    // Signal indicator views
-    private View signalMarker;
-    private TextView dbmValueText;
-    private View signalGradientBar;
-
     private TelephonyManager telephonyManager;
     private SubscriptionManager subscriptionManager;
     private List<PhoneStateListener> listeners = new ArrayList<>();
 
     private String sim1SignalText = "N/A";
     private String sim2SignalText = "N/A";
+    private int sim1Dbm = -1;
+    private int sim2Dbm = -1;
+    private String sim1NetworkType = "0G";
+    private String sim2NetworkType = "0G";
+    private String sim1CarrierName = "";
+    private String sim2CarrierName = "";
     private boolean sim1Available = false;
     private boolean sim2Available = false;
 
@@ -80,31 +82,25 @@ public class MainActivity extends AppCompatActivity {
         radioBlack = findViewById(R.id.radioBlack);
         radioWhite = findViewById(R.id.radioWhite);
 
-        // Initialize views
+        // Initialize SIM1 views
         tvSim1Signal = findViewById(R.id.tvSim1Signal);
-        tvSim2Signal = findViewById(R.id.tvSim2Signal);
-        signalstrengthTextView = findViewById(R.id.signalstrengthTextView);
-        simSelectionRadioGroup = findViewById(R.id.simSelectionRadioGroup);
-        radioSim1 = findViewById(R.id.radioSim1);
-        radioSim2 = findViewById(R.id.radioSim2);
+        sim1OperatorName = findViewById(R.id.sim1OperatorName);
+        sim1Marker = findViewById(R.id.sim1Marker);
+        sim1DbmText = findViewById(R.id.sim1DbmText);
+        sim1GradientBar = findViewById(R.id.sim1GradientBar);
 
-        // Initialize signal indicator views
-        signalMarker = findViewById(R.id.signalMarker);
-        dbmValueText = findViewById(R.id.dbmValueText);
-        signalGradientBar = findViewById(R.id.signalGradientBar);
+        // Initialize SIM2 views
+        tvSim2Signal = findViewById(R.id.tvSim2Signal);
+        sim2OperatorName = findViewById(R.id.sim2OperatorName);
+        sim2Marker = findViewById(R.id.sim2Marker);
+        sim2DbmText = findViewById(R.id.sim2DbmText);
+        sim2GradientBar = findViewById(R.id.sim2GradientBar);
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
         telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         subscriptionManager = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
-
-
-        // Set up radio group listener
-        simSelectionRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            updatesignalstrengthTextView();
-            saveSelectedSim();
-        });
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ||
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -119,16 +115,16 @@ public class MainActivity extends AppCompatActivity {
         // Initialize exit button
         Button exitButton = findViewById(R.id.exitButton);
 
-// Set initial state for the autostart checkbox
+        // Set initial state for the autostart checkbox
         boolean isAutoStartEnabled = sharedPreferences.getBoolean(AUTO_START_KEY, false);
         autostartCheckBox.setChecked(isAutoStartEnabled);
 
-// Set initial state for radio color selection (default to white)
+        // Set initial state for radio color selection (default to white)
         boolean radioChosenBlack = sharedPreferences.getBoolean(RADIO_CHOSEN_BLACK_KEY, false);
         radioBlack.setChecked(radioChosenBlack);
         radioWhite.setChecked(!radioChosenBlack);
 
-// Set checkbox change listener for autostart
+        // Set checkbox change listener for autostart
         autostartCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -138,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-// Set radio group change listener for text color
+        // Set radio group change listener for text color
         textColorRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -149,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-// Exit button to kill notification service, activity, and fully exit the app
+        // Exit button to kill notification service, activity, and fully exit the app
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -165,16 +161,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Initially hide SIM2 section until we know it's available
+        hideSim2Section();
     }
 
+    private void hideSim2Section() {
+        findViewById(R.id.sim2OperatorLabel).setVisibility(View.GONE);
+        sim2OperatorName.setVisibility(View.GONE);
+        tvSim2Signal.setVisibility(View.GONE);
+        findViewById(R.id.sim2IndicatorContainer).setVisibility(View.GONE);
+    }
 
+    private void showSim2Section() {
+        findViewById(R.id.sim2OperatorLabel).setVisibility(View.VISIBLE);
+        sim2OperatorName.setVisibility(View.VISIBLE);
+        tvSim2Signal.setVisibility(View.VISIBLE);
+        findViewById(R.id.sim2IndicatorContainer).setVisibility(View.VISIBLE);
+    }
 
     private void startListening() {
         List<SubscriptionInfo> subscriptionInfoList = subscriptionManager.getActiveSubscriptionInfoList();
 
         if (subscriptionInfoList == null || subscriptionInfoList.isEmpty()) {
             Toast.makeText(this, "No active SIM cards found", Toast.LENGTH_SHORT).show();
-            setupRadioButtons();
             return;
         }
 
@@ -187,11 +196,24 @@ public class MainActivity extends AppCompatActivity {
             int simSlotIndex = subscriptionInfo.getSimSlotIndex(); // 0 for SIM1, 1 for SIM2
             TelephonyManager tmForSim = telephonyManager.createForSubscriptionId(subscriptionId);
 
-            // Mark SIM as available
+            // Get carrier/operator name
+            CharSequence carrierName = subscriptionInfo.getCarrierName();
+            String operatorName = (carrierName != null && carrierName.length() > 0)
+                    ? carrierName.toString()
+                    : tmForSim.getSimOperatorName();
+
+            // Mark SIM as available and set operator name
             if (simSlotIndex == 0) {
                 sim1Available = true;
+                sim1CarrierName = operatorName;
+                runOnUiThread(() -> sim1OperatorName.setText(operatorName));
             } else if (simSlotIndex == 1) {
                 sim2Available = true;
+                sim2CarrierName = operatorName;
+                runOnUiThread(() -> {
+                    sim2OperatorName.setText(operatorName);
+                    showSim2Section();
+                });
             }
 
             PhoneStateListener listener = new PhoneStateListener() {
@@ -214,14 +236,18 @@ public class MainActivity extends AppCompatActivity {
                         String signalText = "📶 " + (dbm == -1 ? "-0 dBm 0G" : dbm + " dBm " + networkType);
 
                         if (simSlotIndex == 0) {
-                            tvSim1Signal.setText("SIM 1 Signal: " + displayText);
+                            tvSim1Signal.setText(signalText);
                             sim1SignalText = signalText;
+                            sim1Dbm = dbm;
+                            sim1NetworkType = networkType;
+                            updateSim1SignalIndicator(dbm);
                         } else if (simSlotIndex == 1) {
-                            tvSim2Signal.setText("SIM 2 Signal: " + displayText);
+                            tvSim2Signal.setText(signalText);
                             sim2SignalText = signalText;
+                            sim2Dbm = dbm;
+                            sim2NetworkType = networkType;
+                            updateSim2SignalIndicator(dbm);
                         }
-
-                        updatesignalstrengthTextView();
                     });
                 }
             };
@@ -229,130 +255,55 @@ public class MainActivity extends AppCompatActivity {
             listeners.add(listener); // Store listener to prevent garbage collection
             tmForSim.listen(listener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         }
-
-        setupRadioButtons();
     }
 
-    private void setupRadioButtons() {
-        runOnUiThread(() -> {
-            // Enable/disable radio buttons based on SIM availability
-            radioSim1.setEnabled(sim1Available);
-            radioSim2.setEnabled(sim2Available);
-
-            // Gray out unavailable SIMs
-            if (!sim1Available) {
-                radioSim1.setAlpha(0.5f);
-                radioSim1.setTextColor(getResources().getColor(android.R.color.darker_gray));
-            } else {
-                radioSim1.setAlpha(1.0f);
-                radioSim1.setTextColor(getResources().getColor(android.R.color.primary_text_light));
-            }
-
-            if (!sim2Available) {
-                radioSim2.setAlpha(0.5f);
-                radioSim2.setTextColor(getResources().getColor(android.R.color.darker_gray));
-            } else {
-                radioSim2.setAlpha(1.0f);
-                radioSim2.setTextColor(getResources().getColor(android.R.color.primary_text_light));
-            }
-
-            // Auto-select based on availability and saved preference
-            int savedSelection = sharedPreferences.getInt(PREF_SELECTED_SIM, -1);
-
-            if (savedSelection == R.id.radioSim1 && sim1Available) {
-                radioSim1.setChecked(true);
-            } else if (savedSelection == R.id.radioSim2 && sim2Available) {
-                radioSim2.setChecked(true);
-            } else {
-                // Auto-select based on availability
-                if (sim1Available && !sim2Available) {
-                    radioSim1.setChecked(true);
-                } else if (sim2Available && !sim1Available) {
-                    radioSim2.setChecked(true);
-                } else if (sim1Available) {
-                    // Both available or neither, default to SIM1 if available
-                    radioSim1.setChecked(true);
-                }
-            }
-
-            updatesignalstrengthTextView();
-        });
+    private void updateSim1SignalIndicator(int dbmValue) {
+        updateSignalIndicator(sim1Marker, sim1DbmText, sim1GradientBar, dbmValue);
     }
 
-    private void updatesignalstrengthTextView() {
-        String displayText = "📶 -0 dBm 0G"; // Default text
-
-        int checkedId = simSelectionRadioGroup.getCheckedRadioButtonId();
-        if (checkedId == R.id.radioSim1 && sim1Available) {
-            displayText = sim1SignalText;
-        } else if (checkedId == R.id.radioSim2 && sim2Available) {
-            displayText = sim2SignalText;
-        }
-
-        signalstrengthTextView.setText(displayText);
-        updateSignalIndicator(displayText);
+    private void updateSim2SignalIndicator(int dbmValue) {
+        updateSignalIndicator(sim2Marker, sim2DbmText, sim2GradientBar, dbmValue);
     }
 
-    private void updateSignalIndicator(String signalText) {
-        // Extract dBm value from signal text using regex
-        int dbmValue = extractDbmValue(signalText);
-
+    private void updateSignalIndicator(View marker, TextView dbmText, View gradientBar, int dbmValue) {
         // Update dBm text display
         if (dbmValue == -1) {
-            dbmValueText.setText("-- dBm");
+            dbmText.setText("-- dBm");
         } else {
-            dbmValueText.setText(dbmValue + " dBm");
+            dbmText.setText(dbmValue + " dBm");
         }
-
-
 
         // Calculate position on gradient bar (-120 dBm = left, -50 dBm = right)
         float position = calculateMarkerPosition(dbmValue);
 
         // Update marker position
-        signalGradientBar.post(() -> {
-            // Force text measurement
-            dbmValueText.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        gradientBar.post(() -> {
+            dbmText.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
 
-            int barWidth = signalGradientBar.getWidth();
-            int markerWidth = signalMarker.getWidth();
-            int textWidth = dbmValueText.getMeasuredWidth();
+            int barWidth = gradientBar.getWidth();
+            int markerWidth = marker.getWidth();
+            int textWidth = dbmText.getMeasuredWidth();
 
             // Calculate the actual position considering marker width
             int markerX = (int) (position * (barWidth - markerWidth));
 
             // Set marker position
-            RelativeLayout.LayoutParams markerParams = (RelativeLayout.LayoutParams) signalMarker.getLayoutParams();
-            markerParams.leftMargin = 10 + markerX; // 10dp offset to align with gradient bar
-            signalMarker.setLayoutParams(markerParams);
+            RelativeLayout.LayoutParams markerParams = (RelativeLayout.LayoutParams) marker.getLayoutParams();
+            markerParams.leftMargin = markerX;
+            marker.setLayoutParams(markerParams);
 
             // Calculate text position to keep it centered under marker but within bounds
-            int idealTextX = 10 + markerX + (markerWidth / 2) - (textWidth / 2);
-            int minTextX = 10; // Minimum left margin to prevent cutoff
-            int maxTextX = 10 + barWidth - textWidth; // Maximum left margin to prevent cutoff
+            int idealTextX = markerX + (markerWidth / 2) - (textWidth / 2);
+            int minTextX = 0;
+            int maxTextX = barWidth - textWidth;
 
             // Clamp text position within bounds
             int finalTextX = Math.max(minTextX, Math.min(maxTextX, idealTextX));
 
-            RelativeLayout.LayoutParams textParams = (RelativeLayout.LayoutParams) dbmValueText.getLayoutParams();
+            RelativeLayout.LayoutParams textParams = (RelativeLayout.LayoutParams) dbmText.getLayoutParams();
             textParams.leftMargin = finalTextX;
-            dbmValueText.setLayoutParams(textParams);
+            dbmText.setLayoutParams(textParams);
         });
-    }
-
-    private int extractDbmValue(String signalText) {
-        // Use regex to extract dBm value from signal text
-        Pattern pattern = Pattern.compile("(-?\\d+)\\s*dBm");
-        Matcher matcher = pattern.matcher(signalText);
-
-        if (matcher.find()) {
-            try {
-                return Integer.parseInt(matcher.group(1));
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-        return -1; // No valid dBm found
     }
 
     private float calculateMarkerPosition(int dbmValue) {
@@ -368,39 +319,6 @@ public class MainActivity extends AppCompatActivity {
         float position = (clampedDbm + 120) / 70.0f;
 
         return position;
-    }
-
-    /* Marker moves in logarithm scale
-    private float calculateMarkerPosition(int dbmValue) {
-        if (dbmValue == -1) {
-            return 0.0f; // Default to left for invalid values
-        }
-
-        // Clamp dBm range (-120 = weakest, -50 = strongest)
-        int clampedDbm = Math.max(-120, Math.min(-50, dbmValue));
-
-        // Convert to a positive scale (stronger = higher power)
-        // Reference: 0 dBm = 1 mW, P(mW) = 10^(dBm/10)
-        // For visualization, normalize between -120 and -50 dBm
-        double powerAtMin = Math.pow(10, -120 / 10.0);
-        double powerAtMax = Math.pow(10, -50 / 10.0);
-        double powerCurrent = Math.pow(10, clampedDbm / 10.0);
-
-        // Normalize the logarithmic power into a 0..1 range
-        float position = (float) ((powerCurrent - powerAtMin) / (powerAtMax - powerAtMin));
-
-        // Clamp again just in case of rounding
-        position = Math.max(0.0f, Math.min(1.0f, position));
-
-        return position;
-    }
-*/
-
-    private void saveSelectedSim() {
-        int checkedId = simSelectionRadioGroup.getCheckedRadioButtonId();
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(PREF_SELECTED_SIM, checkedId);
-        editor.apply();
     }
 
     private String getNetworkType(TelephonyManager tm) {
@@ -606,7 +524,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (granted) {
                 startListening();
-                startSignalService(); // Add this line
+                startSignalService();
             } else {
                 Toast.makeText(this, "Permission denied, cannot read SIM signal", Toast.LENGTH_SHORT).show();
             }

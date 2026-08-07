@@ -11,8 +11,8 @@
         android:id="@+id/notification_text_expanded"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Battery Voltage: 0.0 V"
-        android:textColor="@android:color/black"
+        android:text="📶 Signal: N/A"
+        android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:paddingTop="5dp"
         android:paddingBottom="5dp" />

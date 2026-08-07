@@ -29,28 +29,25 @@ import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SignalStrengthService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = "SignalStrengthService";
     private static final String CHANNEL_ID = "SignalStrengthChannel";
     private static final int NOTIFICATION_ID = 1;
     private static final String PREFS_NAME = "SIMSelection";
-    private static final String PREF_SELECTED_SIM = "selected_sim";
     private static final String RADIO_CHOSEN_BLACK_KEY = "RadioChosenBlack";
 
     private TelephonyManager telephonyManager;
     private SubscriptionManager subscriptionManager;
     private List<PhoneStateListener> listeners = new ArrayList<>();
 
-    private String sim1SignalText = "N/A";
-    private String sim2SignalText = "N/A";
+    private String sim1SignalText = "-0 dBm";
+    private String sim2SignalText = "-0 dBm";
+    private String sim1NetworkType = "0G";
+    private String sim2NetworkType = "0G";
     private boolean sim1Available = false;
     private boolean sim2Available = false;
     private boolean isDualSim = false;
-    private int selectedSimSlot = 0;
-    private String currentNetworkType = "0G";
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -66,7 +63,7 @@ public class SignalStrengthService extends Service implements SharedPreferences.
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         createNotificationChannel();
-        startForeground(NOTIFICATION_ID, createNotification("-0 dBm"));
+        startForeground(NOTIFICATION_ID, createNotification());
 
         if (hasPermissions()) {
             startListening();
@@ -119,16 +116,15 @@ public class SignalStrengthService extends Service implements SharedPreferences.
                         dbm = extractDbm(signalStrength);
                     }
 
-                    // Use the improved network type detection
                     String networkType = getNetworkTypeForSim(tmForSim, simSlotIndex);
-                    currentNetworkType = networkType;
-
                     String signalText = (dbm == -1 ? "-0 dBm" : dbm + " dBm");
 
                     if (simSlotIndex == 0) {
                         sim1SignalText = signalText;
+                        sim1NetworkType = networkType;
                     } else if (simSlotIndex == 1) {
                         sim2SignalText = signalText;
+                        sim2NetworkType = networkType;
                     }
 
                     updateNotification();
@@ -138,83 +134,64 @@ public class SignalStrengthService extends Service implements SharedPreferences.
             listeners.add(listener);
             tmForSim.listen(listener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         }
-
-        // Determine selected SIM slot
-        determineSelectedSimSlot();
-    }
-
-    private void determineSelectedSimSlot() {
-        int savedSelection = sharedPreferences.getInt(PREF_SELECTED_SIM, -1);
-
-        if (savedSelection == R.id.radioSim1 && sim1Available) {
-            selectedSimSlot = 0;
-        } else if (savedSelection == R.id.radioSim2 && sim2Available) {
-            selectedSimSlot = 1;
-        } else {
-            // Auto-select based on availability
-            if (sim1Available && !sim2Available) {
-                selectedSimSlot = 0;
-            } else if (sim2Available && !sim1Available) {
-                selectedSimSlot = 1;
-            } else if (sim1Available) {
-                selectedSimSlot = 0; // Default to SIM1 if both available
-            }
-        }
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (PREF_SELECTED_SIM.equals(key)) {
-            Log.d(TAG, "SIM selection changed, updating notification");
-            determineSelectedSimSlot();
-            updateNotification();
-        } else if (RADIO_CHOSEN_BLACK_KEY.equals(key)) {
+        if (RADIO_CHOSEN_BLACK_KEY.equals(key)) {
             Log.d(TAG, "Text color preference changed, updating notification");
             updateNotification();
         }
     }
 
     private void updateNotification() {
-        String currentSignalText;
-
-        if (selectedSimSlot == 0 && sim1Available) {
-            currentSignalText = sim1SignalText;
-        } else if (selectedSimSlot == 1 && sim2Available) {
-            currentSignalText = sim2SignalText;
-        } else {
-            currentSignalText = "-0 dBm";
-        }
-
-        Notification notification = createNotification(currentSignalText);
+        Notification notification = createNotification();
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(NOTIFICATION_ID, notification);
     }
 
-    private Notification createNotification(String signalStrengthText) {
-        Log.d(TAG, "createNotification: Creating notification with signal strength: " + signalStrengthText);
+    private Notification createNotification() {
+        Log.d(TAG, "createNotification: Updating notification");
         boolean isRadioChosenBlack = sharedPreferences.getBoolean(RADIO_CHOSEN_BLACK_KEY, false);
         int TEXT_COLOR = isRadioChosenBlack ? Color.BLACK : Color.WHITE;
 
-        // Add SIM indicator to the notification text
-        String simIndicator = isDualSim ? " (SIM" + (selectedSimSlot + 1) + ")" : "";
+        // Build notification text based on available SIMs
+        String collapsedText;
+        String expandedText;
+
+        if (isDualSim && sim1Available && sim2Available) {
+            collapsedText = "\uD83D\uDCF6 SIM1: " + sim1SignalText + " (" + sim1NetworkType + ") | SIM2: " + sim2SignalText + " (" + sim2NetworkType + ")";
+            expandedText = "\uD83D\uDCF6 Signal Strength\n  SIM 1: " + sim1SignalText + " (" + sim1NetworkType + ")\n  SIM 2: " + sim2SignalText + " (" + sim2NetworkType + ")";
+        } else if (sim1Available) {
+            collapsedText = "\uD83D\uDCF6 " + sim1SignalText + " (" + sim1NetworkType + ")";
+            expandedText = "\uD83D\uDCF6 Signal strength: " + sim1SignalText + " (" + sim1NetworkType + ")";
+        } else if (sim2Available) {
+            collapsedText = "\uD83D\uDCF6 " + sim2SignalText + " (" + sim2NetworkType + ")";
+            expandedText = "\uD83D\uDCF6 Signal strength: " + sim2SignalText + " (" + sim2NetworkType + ")";
+        } else {
+            collapsedText = "\uD83D\uDCF6 Signal: N/A";
+            expandedText = "\uD83D\uDCF6 Signal strength: N/A";
+        }
 
         RemoteViews notificationExpandedLayout = new RemoteViews(getPackageName(), R.layout.notification_expanded);
-        notificationExpandedLayout.setTextViewText(R.id.notification_text_expanded,
-                "\uD83D\uDCF6 Signal strength: " + signalStrengthText + " (" + currentNetworkType + ")" + simIndicator);
+        notificationExpandedLayout.setTextViewText(R.id.notification_text_expanded, expandedText);
 
         RemoteViews notificationLayout = new RemoteViews(getPackageName(), R.layout.notification);
-        notificationLayout.setTextViewText(R.id.notification_text,
-                "\uD83D\uDCF6 " + signalStrengthText + " (" + currentNetworkType + ")" + simIndicator);
+        notificationLayout.setTextViewText(R.id.notification_text, collapsedText);
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
+        // Determine the best signal value for the small icon
         String shortText = "-140";
-        if (signalStrengthText.contains("dBm")) {
+        String bestSignalText = sim1SignalText;
+        if (sim2Available && sim2SignalText.compareTo(sim1SignalText) > 0) {
+            bestSignalText = sim2SignalText;
+        }
+        if (bestSignalText.contains("dBm")) {
             try {
-                int dbmValue = Integer.parseInt(signalStrengthText.split(" ")[0]);
-                // Only create numeric icon for valid signal strength values (-120 to -30 dBm range)
+                int dbmValue = Integer.parseInt(bestSignalText.split(" ")[0]);
                 if (dbmValue >= -120 && dbmValue <= -30) {
                     shortText = String.valueOf(dbmValue);
                 }
@@ -257,23 +234,16 @@ public class SignalStrengthService extends Service implements SharedPreferences.
             int networkType = TelephonyManager.NETWORK_TYPE_UNKNOWN;
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Android 11+ (API 30+)
                 networkType = tm.getDataNetworkType();
-
-                // If data network type is unknown, try voice network type as fallback
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                     networkType = tm.getVoiceNetworkType();
                 }
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7+ (API 24+)
                 networkType = tm.getDataNetworkType();
-
-                // If data network type is unknown, try the legacy getNetworkType
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                     networkType = tm.getNetworkType();
                 }
             } else {
-                // Android 6 and below
                 networkType = tm.getNetworkType();
             }
 
@@ -312,33 +282,24 @@ public class SignalStrengthService extends Service implements SharedPreferences.
         }
     }
 
-    // Also add this improved method to get network type with better SIM-specific detection:
     private String getNetworkTypeForSim(TelephonyManager tm, int simSlotIndex) {
         try {
             int networkType = TelephonyManager.NETWORK_TYPE_UNKNOWN;
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Try to get the most accurate network type for this SIM
                 networkType = tm.getDataNetworkType();
-
-                // For dual SIM, if this SIM is not the data SIM, try voice network type
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN ||
                         (isDualSim && !isDataSim(tm))) {
                     networkType = tm.getVoiceNetworkType();
                 }
-
-                // If still unknown, try service state approach
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                     networkType = getNetworkTypeFromServiceState(tm);
                 }
-
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 networkType = tm.getDataNetworkType();
-
                 if (networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                     networkType = tm.getNetworkType();
                 }
-
             } else {
                 networkType = tm.getNetworkType();
             }
@@ -351,13 +312,10 @@ public class SignalStrengthService extends Service implements SharedPreferences.
         }
     }
 
-    // Helper method to check if this TelephonyManager instance is for the data SIM
     private boolean isDataSim(TelephonyManager tm) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 int dataSubId = SubscriptionManager.getDefaultDataSubscriptionId();
-
-                // Get the subscription ID for this TelephonyManager instance
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     return tm.getSubscriptionId() == dataSubId;
                 }
@@ -365,10 +323,9 @@ public class SignalStrengthService extends Service implements SharedPreferences.
         } catch (Exception e) {
             Log.e(TAG, "Error checking if data SIM", e);
         }
-        return true; // Default to true if we can't determine
+        return true;
     }
 
-    // Helper method to get network type from service state (Android 11+)
     @TargetApi(Build.VERSION_CODES.R)
     private int getNetworkTypeFromServiceState(TelephonyManager tm) {
         try {
@@ -380,7 +337,6 @@ public class SignalStrengthService extends Service implements SharedPreferences.
         }
         return TelephonyManager.NETWORK_TYPE_UNKNOWN;
     }
-
 
     private int extractDbm(SignalStrength signalStrength) {
         try {
@@ -421,7 +377,7 @@ public class SignalStrengthService extends Service implements SharedPreferences.
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY; // Restart service if killed
+        return START_STICKY;
     }
 
     @Override
@@ -429,12 +385,10 @@ public class SignalStrengthService extends Service implements SharedPreferences.
         super.onDestroy();
         Log.d(TAG, "Service destroyed");
 
-        // Unregister SharedPreferences listener
         if (sharedPreferences != null) {
             sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
         }
 
-        // Clean up listeners
         for (PhoneStateListener listener : listeners) {
             telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE);
         }
@@ -443,6 +397,6 @@ public class SignalStrengthService extends Service implements SharedPreferences.
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null; // Not a bound service
+        return null;
     }
 }
