@@ -1,0 +1,152 @@
+name: Build MobiloSignal APK
+
+# Запускается только вручную. Перед запуском выбери тип сборки в интерфейсе Actions.
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Тип сборки"
+        required: true
+        default: "debug"
+        type: choice
+        options:
+          - debug
+          - release
+
+# Корень gradle-проекта внутри репозитория (см. layout Eb43/phonesignalstrength)
+env:
+  GRADLE_PROJECT_DIR: mobilosignal
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        # Если этот workflow лежит в отдельном репозитории, а не в форке
+        # Eb43/phonesignalstrength — раскомментируй и укажи источник:
+        # with:
+        #   repository: Eb43/phonesignalstrength
+        #   ref: main
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
+
+      # Генерируем одноразовый keystore со случайным паролем/алиасом.
+      # Файл существует только в рамках этого запуска раннера и нигде не публикуется.
+      - name: Generate ephemeral signing key
+        id: gen_key
+        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+
+          STORE_PASS=$(openssl rand -base64 32 | tr -d '\n')
+          KEY_PASS=$(openssl rand -base64 32 | tr -d '\n')
+          KEY_ALIAS="key-$(openssl rand -hex 4)"
+          KEYSTORE_PATH="${{ github.workspace }}/${{ env.GRADLE_PROJECT_DIR }}/ephemeral.keystore"
+
+          # маскируем секреты в логах
+          echo "::add-mask::$STORE_PASS"
+          echo "::add-mask::$KEY_PASS"
+
+          keytool -genkeypair -v \
+            -keystore "$KEYSTORE_PATH" \
+            -alias "$KEY_ALIAS" \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$STORE_PASS" -keypass "$KEY_PASS" \
+            -dname "CN=Ephemeral Build, OU=CI, O=CI, L=CI, S=CI, C=XX"
+
+          {
+            echo "KEYSTORE_PATH=$KEYSTORE_PATH"
+            echo "KEYSTORE_PASSWORD=$STORE_PASS"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASS"
+          } >> "$GITHUB_ENV"
+
+      # Патчим app/build.gradle: добавляем signingConfigs и привязываем
+      # его к нужному buildType (debug или release) — в исходнике этого нет.
+      - name: Wire signing config into build.gradle
+        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
+        run: |
+          python3 - "$BUILD_TYPE" <<'EOF'
+          import re, sys
+
+          build_type = sys.argv[1]
+          path = "app/build.gradle"
+          with open(path) as f:
+              content = f.read()
+
+          signing_configs_block = f'''
+              signingConfigs {{
+                  {build_type} {{
+                      storeFile file(System.getenv("KEYSTORE_PATH"))
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }}
+              }}
+          '''
+
+          # Вставляем signingConfigs сразу после открытия блока android {
+          content = content.replace(
+              "android {\n",
+              "android {\n" + signing_configs_block,
+              1,
+          )
+
+          # Привязываем signingConfig к нужному buildType.
+          # У 'release' уже есть тело блока; у 'debug' по умолчанию тела нет,
+          # поэтому обрабатываем оба случая.
+          pattern_with_body = re.compile(rf"({build_type}\s*\{{)")
+          if f"{build_type} {{" in content:
+              content = pattern_with_body.sub(
+                  lambda m: m.group(1) + f"\n            signingConfig signingConfigs.{build_type}",
+                  content,
+                  count=1,
+              )
+          else:
+              raise SystemExit(f"buildType '{build_type}' block not found in {path}")
+
+          with open(path, "w") as f:
+              f.write(content)
+
+          print(f"--- patched {path} ---")
+          print(content)
+          EOF
+        env:
+          BUILD_TYPE: ${{ inputs.build_type }}
+
+      - name: Build debug APK
+        if: ${{ inputs.build_type == 'debug' }}
+        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Build release APK
+        if: ${{ inputs.build_type == 'release' }}
+        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Locate APK
+        id: find_apk
+        working-directory: ${{ env.GRADLE_PROJECT_DIR }}
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/${{ inputs.build_type }} -name "*.apk" | head -n1)
+          echo "Found: $APK_PATH"
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobilosignal-${{ inputs.build_type }}-${{ github.run_number }}
+          path: ${{ env.GRADLE_PROJECT_DIR }}/${{ steps.find_apk.outputs.apk_path }}
+          retention-days: 14
