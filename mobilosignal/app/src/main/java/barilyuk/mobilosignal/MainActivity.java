@@ -98,9 +98,12 @@ public class MainActivity extends AppCompatActivity {
         subscriptionManager = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
 
         // Listen for SIM subscription changes (e.g. SIM inserted/removed, radio on/off)
-        subscriptionsChangedListener = () -> {
-            Log.d("MainActivity", "Subscriptions changed, re-detecting SIMs");
-            runOnUiThread(this::refreshSimDetection);
+        subscriptionsChangedListener = new SubscriptionManager.OnSubscriptionsChangedListener() {
+            @Override
+            public void onSubscriptionsChanged() {
+                Log.d("MainActivity", "Subscriptions changed, re-detecting SIMs");
+                runOnUiThread(MainActivity.this::refreshSimDetection);
+            }
         };
 
         if (hasPermissions()) {
