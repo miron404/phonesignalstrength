@@ -272,11 +272,27 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     String signalText = "\uD83D\uDCF6 " + (dbm == -1 ? "-0 dBm 0G" : dbm + " dBm " + networkType);
 
+                    int textColor;
+                    switch (networkType) {
+                        case "4G":
+                        case "5G":
+                            textColor = android.graphics.Color.rgb(0, 160, 0); // green
+                            break;
+                        case "3G":
+                            textColor = android.graphics.Color.rgb(200, 160, 0); // yellow-ish
+                            break;
+                        default: // 2G, 0G, 1G, etc.
+                            textColor = android.graphics.Color.RED;
+                            break;
+                    }
+
                     if (displaySlot == 0) {
                         tvSim1Signal.setText(signalText);
+                        tvSim1Signal.setTextColor(textColor);
                         updateSim1SignalIndicator(dbm);
                     } else {
                         tvSim2Signal.setText(signalText);
+                        tvSim2Signal.setTextColor(textColor);
                         updateSim2SignalIndicator(dbm);
                     }
                 });
