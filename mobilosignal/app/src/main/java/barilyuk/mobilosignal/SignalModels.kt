@@ -10,6 +10,35 @@ enum class NetworkGeneration(val label: String) {
 }
 
 /**
+ * The dBm window a bar is drawn over, plus the two thresholds that split it into poor / fair /
+ * good.
+ *
+ * These are display ranges, not the full 3GPP ranges. LTE RSRP is specified down to -140 dBm, but
+ * anything below about -115 is equally unusable, so spending a third of the bar on it would only
+ * make the useful region harder to read. The thresholds follow the usual rules of thumb: for
+ * LTE/NR, -100 and below is poor, -90 and above is good.
+ */
+data class SignalScale(
+    val min: Int,
+    val max: Int,
+    val poorMax: Int,
+    val fairMax: Int,
+)
+
+val NetworkGeneration.scale: SignalScale
+    get() = when (this) {
+        // RSSI
+        NetworkGeneration.G2 -> SignalScale(min = -110, max = -65, poorMax = -95, fairMax = -85)
+        // RSCP
+        NetworkGeneration.G3 -> SignalScale(min = -110, max = -70, poorMax = -95, fairMax = -85)
+        // RSRP
+        NetworkGeneration.G4 -> SignalScale(min = -115, max = -75, poorMax = -100, fairMax = -90)
+        // SS-RSRP
+        NetworkGeneration.G5 -> SignalScale(min = -115, max = -75, poorMax = -100, fairMax = -90)
+        NetworkGeneration.UNKNOWN -> SignalScale(min = -120, max = -50, poorMax = -100, fairMax = -90)
+    }
+
+/**
  * Signal metrics for one SIM. Every field is null when the modem or the vendor HAL does not
  * report it, which is common: SINR in particular is missing on a lot of devices.
  */

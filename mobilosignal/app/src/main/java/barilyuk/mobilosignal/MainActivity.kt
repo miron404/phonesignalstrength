@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
-import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,10 +33,7 @@ class MainActivity : AppCompatActivity() {
         val label: View,
         val operatorName: TextView,
         val signalText: TextView,
-        val container: View,
-        val gradientBar: View,
-        val marker: View,
-        val dbmText: TextView,
+        val bar: SignalBarView,
     )
 
     private lateinit var sim1Views: SimViews
@@ -71,19 +67,13 @@ class MainActivity : AppCompatActivity() {
             label = binding.sim1OperatorLabel,
             operatorName = binding.sim1OperatorName,
             signalText = binding.tvSim1Signal,
-            container = binding.sim1IndicatorContainer,
-            gradientBar = binding.sim1GradientBar,
-            marker = binding.sim1Marker,
-            dbmText = binding.sim1DbmText,
+            bar = binding.sim1Bar,
         )
         sim2Views = SimViews(
             label = binding.sim2OperatorLabel,
             operatorName = binding.sim2OperatorName,
             signalText = binding.tvSim2Signal,
-            container = binding.sim2IndicatorContainer,
-            gradientBar = binding.sim2GradientBar,
-            marker = binding.sim2Marker,
-            dbmText = binding.sim2DbmText,
+            bar = binding.sim2Bar,
         )
 
         SignalRepository.init(applicationContext)
@@ -153,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         views.label.visibility = visibility
         views.operatorName.visibility = visibility
         views.signalText.visibility = visibility
-        views.container.visibility = visibility
+        views.bar.visibility = visibility
         if (sim == null) return
 
         val dbm = sim.metrics.dbm
@@ -162,9 +152,7 @@ class MainActivity : AppCompatActivity() {
         views.operatorName.text = sim.operatorName
         views.signalText.text = "📶 $value dBm ${sim.generation.label}"
         views.signalText.setTextColor(ContextCompat.getColor(this, sim.generation.colorRes()))
-        views.dbmText.text = "$value dBm"
-
-        updateMarker(views, dbm)
+        views.bar.setReading(dbm, sim.generation)
     }
 
     /** Green for 4G/5G, amber for 3G, red for 2G and no service. */
@@ -173,39 +161,6 @@ class MainActivity : AppCompatActivity() {
         NetworkGeneration.G4, NetworkGeneration.G5 -> R.color.generation_good
         NetworkGeneration.G3 -> R.color.generation_fair
         NetworkGeneration.G2, NetworkGeneration.UNKNOWN -> R.color.generation_poor
-    }
-
-    // NOTE: this still drives the PNG gradient bar by moving layout params around. It goes away
-    // with the bar itself when the custom view lands.
-    private fun updateMarker(views: SimViews, dbm: Int?) {
-        val position = markerPosition(dbm)
-
-        views.gradientBar.post {
-            views.dbmText.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-
-            val barWidth = views.gradientBar.width
-            val markerWidth = views.marker.width
-            val textWidth = views.dbmText.measuredWidth
-            if (barWidth == 0) return@post
-
-            val markerX = (position * (barWidth - markerWidth)).toInt()
-
-            val markerParams = views.marker.layoutParams as RelativeLayout.LayoutParams
-            markerParams.leftMargin = markerX
-            views.marker.layoutParams = markerParams
-
-            val idealTextX = markerX + (markerWidth / 2) - (textWidth / 2)
-            val maxTextX = (barWidth - textWidth).coerceAtLeast(0)
-            val textParams = views.dbmText.layoutParams as RelativeLayout.LayoutParams
-            textParams.leftMargin = idealTextX.coerceIn(0, maxTextX)
-            views.dbmText.layoutParams = textParams
-        }
-    }
-
-    private fun markerPosition(dbm: Int?): Float {
-        if (dbm == null) return 0.0f
-        val clamped = dbm.coerceIn(-120, -50)
-        return (clamped + 120) / 70.0f
     }
 
     private fun hasPhoneStatePermission(): Boolean =

@@ -12,4 +12,9 @@
     <color name="generation_good">#FF00801A</color>
     <color name="generation_fair">#FF9A6B00</color>
     <color name="generation_poor">#FFC62828</color>
+
+    <!-- Signal bar segments, by the strength each segment stands for. -->
+    <color name="quality_good">#FF2E7D32</color>
+    <color name="quality_fair">#FFF9A825</color>
+    <color name="quality_poor">#FFC62828</color>
 </resources>

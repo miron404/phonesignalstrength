@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Lighter variants so the generation colours stay legible on a dark background. -->
+    <!-- Lighter variants so the colours stay legible on a dark background. -->
     <color name="generation_good">#FF66BB6A</color>
     <color name="generation_fair">#FFFFCA28</color>
     <color name="generation_poor">#FFEF5350</color>
+
+    <color name="quality_good">#FF66BB6A</color>
+    <color name="quality_fair">#FFFFCA28</color>
+    <color name="quality_poor">#FFEF5350</color>
 </resources>

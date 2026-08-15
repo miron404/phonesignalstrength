@@ -77,42 +77,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/sim1OperatorName" />
 
-    <RelativeLayout
-        android:id="@+id/sim1IndicatorContainer"
+    <barilyuk.mobilosignal.SignalBarView
+        android:id="@+id/sim1Bar"
         android:layout_width="0dp"
-        android:layout_height="55dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
         android:layout_marginEnd="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvSim1Signal">
-
-        <View
-            android:id="@+id/sim1GradientBar"
-            android:layout_width="match_parent"
-            android:layout_height="20dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/signal_gradient" />
-
-        <View
-            android:id="@+id/sim1Marker"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/triangle_marker" />
-
-        <TextView
-            android:id="@+id/sim1DbmText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/sim1Marker"
-            android:layout_marginTop="2dp"
-            android:text="@string/dbm_placeholder"
-            android:textColor="?android:textColorPrimary"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </RelativeLayout>
+        app:layout_constraintTop_toBottomOf="@+id/tvSim1Signal" />
 
     <!-- ============ SIM 2 ============ -->
     <TextView
@@ -126,7 +100,7 @@
         android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sim1IndicatorContainer" />
+        app:layout_constraintTop_toBottomOf="@+id/sim1Bar" />
 
     <TextView
         android:id="@+id/sim2OperatorName"
@@ -159,42 +133,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/sim2OperatorName" />
 
-    <RelativeLayout
-        android:id="@+id/sim2IndicatorContainer"
+    <barilyuk.mobilosignal.SignalBarView
+        android:id="@+id/sim2Bar"
         android:layout_width="0dp"
-        android:layout_height="55dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
         android:layout_marginEnd="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvSim2Signal">
-
-        <View
-            android:id="@+id/sim2GradientBar"
-            android:layout_width="match_parent"
-            android:layout_height="20dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/signal_gradient" />
-
-        <View
-            android:id="@+id/sim2Marker"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/triangle_marker" />
-
-        <TextView
-            android:id="@+id/sim2DbmText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/sim2Marker"
-            android:layout_marginTop="2dp"
-            android:text="@string/dbm_placeholder"
-            android:textColor="?android:textColorPrimary"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </RelativeLayout>
+        app:layout_constraintTop_toBottomOf="@+id/tvSim2Signal" />
 
     <!-- Shown when no SIM is readable at all. -->
     <TextView
