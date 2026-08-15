@@ -18,15 +18,6 @@
     <string name="settings_category_app">App</string>
     <string name="pref_dynamic_colour">Dynamic colours</string>
     <string name="pref_dynamic_colour_summary">Take the accent colours from your wallpaper. Needs Android 12 or newer.</string>
-    <string name="settings_category_updates">Updates</string>
-    <string name="pref_update_rate">Update rate</string>
-    <string name="pref_update_rate_hint">Polling refreshes the readings on a fixed interval instead of waiting for the system to report a change. It keeps the app awake and costs battery.</string>
-    <string name="update_rate_event_driven">Battery saver (on change only)</string>
-    <string name="update_rate_1s">Every second</string>
-    <string name="update_rate_2s">Every 2 seconds</string>
-    <string name="update_rate_5s">Every 5 seconds</string>
-    <string name="update_rate_10s">Every 10 seconds</string>
-
     <string name="pref_kill_app">Kill app &amp; exit</string>
     <string name="pref_kill_app_summary">Stop the notification and close the app completely.</string>
     <string name="pref_persistent_notification">Persistent notification</string>

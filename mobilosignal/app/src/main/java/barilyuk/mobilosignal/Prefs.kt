@@ -14,7 +14,6 @@ object Prefs {
     const val KEY_ICON_BLACK = "RadioChosenBlack"
     const val KEY_PERSISTENT_NOTIFICATION = "persistent_notification"
     const val KEY_DYNAMIC_COLOUR = "dynamic_colour"
-    const val KEY_UPDATE_RATE = "update_rate_seconds"
 
     /**
      * Older builds stored the checked RadioButton's `R.id` here. Resource ids are not stable
@@ -50,11 +49,4 @@ object Prefs {
 
     fun isDynamicColourEnabled(context: Context): Boolean =
         of(context).getBoolean(KEY_DYNAMIC_COLOUR, true)
-
-    /**
-     * How often to poll the modem, in seconds. Zero means the default: stay event driven and
-     * only wake up when the system reports a change.
-     */
-    fun updateIntervalSeconds(context: Context): Int =
-        of(context).getString(KEY_UPDATE_RATE, "0")?.toIntOrNull() ?: 0
 }

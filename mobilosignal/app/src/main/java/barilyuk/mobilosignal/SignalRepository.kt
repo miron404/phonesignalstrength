@@ -8,7 +8,6 @@ package barilyuk.mobilosignal
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.PhoneStateListener
@@ -22,13 +21,6 @@ import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,14 +56,6 @@ object SignalRepository {
     private val slots = linkedMapOf<Int, SimSignal>()
     private val registrations = mutableListOf<Registration>()
     private var subscriptionsListener: SubscriptionManager.OnSubscriptionsChangedListener? = null
-
-    private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
-    private var pollJob: Job? = null
-
-    /** Restarts polling when the user changes the update rate while the app is running. */
-    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == Prefs.KEY_UPDATE_RATE && listening) restartPolling()
-    }
 
     @MainThread
     fun init(context: Context) {
@@ -116,58 +100,16 @@ object SignalRepository {
     private fun start() {
         if (listening) return
         listening = true
-        app?.let { Prefs.of(it).registerOnSharedPreferenceChangeListener(prefsListener) }
         registerSubscriptionsListener()
         refreshSubscriptions()
-        restartPolling()
     }
 
     private fun stop() {
         listening = false
-        stopPolling()
-        app?.let { Prefs.of(it).unregisterOnSharedPreferenceChangeListener(prefsListener) }
         unregisterSubscriptionsListener()
         unregisterAll()
         slots.clear()
         emit()
-    }
-
-    /**
-     * Optional polling on top of the callbacks.
-     *
-     * By default the app is purely event driven, which is the cheapest thing to do but means the
-     * reading only moves when the platform decides the change was significant. Polling asks the
-     * telephony service for its current reading on a fixed interval instead, at the cost of
-     * waking up regularly. It is off unless the user turns it on.
-     */
-    private fun restartPolling() {
-        stopPolling()
-        val context = app ?: return
-        // getSignalStrength() only exists from API 28; below that the setting is hidden.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return
-        val seconds = Prefs.updateIntervalSeconds(context)
-        if (seconds <= 0) return
-
-        pollJob = scope.launch {
-            while (isActive) {
-                delay(seconds * 1000L)
-                if (!listening) break
-                poll()
-            }
-        }
-    }
-
-    private fun stopPolling() {
-        pollJob?.cancel()
-        pollJob = null
-    }
-
-    @RequiresApi(Build.VERSION_CODES.P)
-    private fun poll() {
-        for (registration in registrations) {
-            val strength = runCatching { registration.tm.signalStrength }.getOrNull() ?: continue
-            onSignalStrength(registration.slot, registration, strength)
-        }
     }
 
     private fun registerSubscriptionsListener() {
