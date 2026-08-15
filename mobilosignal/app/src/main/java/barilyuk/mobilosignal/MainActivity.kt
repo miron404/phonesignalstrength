@@ -3,24 +3,27 @@ package barilyuk.mobilosignal
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ColorRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import barilyuk.mobilosignal.databinding.ActivityMainBinding
+import barilyuk.mobilosignal.databinding.ViewSimCardBinding
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -32,16 +35,6 @@ class MainActivity : AppCompatActivity() {
 
     private var dynamicColourApplied = false
 
-    /** The views making up one SIM's row, so both rows can share the rendering code. */
-    private class SimViews(
-        val label: View,
-        val operatorName: TextView,
-        val signalText: TextView,
-        val bar: SignalBarView,
-    )
-
-    private lateinit var sim1Views: SimViews
-    private lateinit var sim2Views: SimViews
 
     private val requestPhoneState =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -69,19 +62,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         applyInsets()
-
-        sim1Views = SimViews(
-            label = binding.sim1OperatorLabel,
-            operatorName = binding.sim1OperatorName,
-            signalText = binding.tvSim1Signal,
-            bar = binding.sim1Bar,
-        )
-        sim2Views = SimViews(
-            label = binding.sim2OperatorLabel,
-            operatorName = binding.sim2OperatorName,
-            signalText = binding.tvSim2Signal,
-            bar = binding.sim2Bar,
-        )
 
         SignalRepository.init(applicationContext)
         setUpControls()
@@ -153,26 +133,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun render(state: SignalState) {
-        renderSim(sim1Views, state.slot(0))
-        renderSim(sim2Views, state.slot(1))
+        renderSim(binding.sim1Card, R.string.sim_1, state.slot(0))
+        renderSim(binding.sim2Card, R.string.sim_2, state.slot(1))
         binding.noSimText.visibility = if (state.sims.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun renderSim(views: SimViews, sim: SimSignal?) {
-        val visibility = if (sim == null) View.GONE else View.VISIBLE
-        views.label.visibility = visibility
-        views.operatorName.visibility = visibility
-        views.signalText.visibility = visibility
-        views.bar.visibility = visibility
+    private fun renderSim(card: ViewSimCardBinding, @StringRes slotName: Int, sim: SimSignal?) {
+        card.root.visibility = if (sim == null) View.GONE else View.VISIBLE
         if (sim == null) return
 
-        val dbm = sim.metrics.dbm
-        val value = dbm?.toString() ?: "--"
+        card.simTitle.text = getString(R.string.sim_title, getString(slotName), sim.operatorName)
+        card.dbmValue.text = getString(R.string.dbm_value, sim.metrics.dbm?.toString() ?: "--")
+        card.signalBar.setReading(sim.metrics.dbm, sim.generation)
 
-        views.operatorName.text = sim.operatorName
-        views.signalText.text = "📶 $value dBm ${sim.generation.label}"
-        views.signalText.setTextColor(ContextCompat.getColor(this, sim.generation.colorRes()))
-        views.bar.setReading(dbm, sim.generation)
+        val colour = ContextCompat.getColor(this, sim.generation.colorRes())
+        card.generationBadge.text = sim.generation.label
+        card.generationBadge.setTextColor(colour)
+        // A tonal chip: the same hue at low alpha behind it reads correctly in both themes,
+        // where a solid fill would need a different text colour for each.
+        card.generationBadge.backgroundTintList =
+            ColorStateList.valueOf(ColorUtils.setAlphaComponent(colour, BADGE_FILL_ALPHA))
     }
 
     /** Green for 4G/5G, amber for 3G, red for 2G and no service. */
@@ -229,5 +209,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSignalService() {
         startForegroundService(Intent(this, SignalStrengthService::class.java))
+    }
+
+    private companion object {
+        /** Alpha of the generation chip's fill, over which the same hue is drawn as text. */
+        const val BADGE_FILL_ALPHA = 0x33
     }
 }

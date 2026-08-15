@@ -4,7 +4,8 @@
     <string name="sim_1">SIM 1</string>
     <string name="sim_2">SIM 2</string>
     <string name="no_value">---</string>
-    <string name="signal_placeholder">📶 N/A</string>
+    <string name="sim_title">%1$s · %2$s</string>
+    <string name="dbm_value">%1$s dBm</string>
     <string name="no_sim">No SIM detected</string>
 
     <!-- Spoken by screen readers for the signal bar. -->

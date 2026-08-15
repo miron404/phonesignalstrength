@@ -3,7 +3,6 @@ package barilyuk.mobilosignal
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
@@ -14,8 +13,8 @@ import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
 
 /**
- * The signal strength gauge: a row of coloured segments, a marker under the current reading and
- * the dBm value below it.
+ * The signal strength gauge: a row of coloured segments with a marker under the current reading.
+ * The dBm value itself is shown by the card above, not here.
  *
  * This replaces a fixed PNG gradient plus two absolutely positioned views. Drawing it means the
  * colours come from the theme (the PNG carried its own grey backdrop that never matched the app
@@ -33,10 +32,9 @@ class SignalBarView @JvmOverloads constructor(
         /** Opacity of the segments above the current reading. */
         const val INACTIVE_ALPHA = 60
         const val ANIMATION_MS = 350L
-        const val NO_READING = "-- dBm"
     }
 
-    private val segmentHeight = dp(20f)
+    private val segmentHeight = dp(24f)
     private val segmentGap = dp(2f)
     private val segmentRadius = dp(2f)
     private val markerWidth = dp(10f)
@@ -45,11 +43,6 @@ class SignalBarView @JvmOverloads constructor(
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val markerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = sp(12f)
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
-    }
-
     private val colorPoor = ContextCompat.getColor(context, R.color.quality_poor)
     private val colorFair = ContextCompat.getColor(context, R.color.quality_fair)
     private val colorGood = ContextCompat.getColor(context, R.color.quality_good)
@@ -64,10 +57,6 @@ class SignalBarView @JvmOverloads constructor(
     /** 0f at the left edge of the bar, 1f at the right. Animated towards the current reading. */
     private var position = 0f
     private var animator: ValueAnimator? = null
-
-    init {
-        labelPaint.color = resolveTextColor()
-    }
 
     fun setReading(dbm: Int?, generation: NetworkGeneration) {
         val newScale = generation.scale
@@ -117,10 +106,8 @@ class SignalBarView @JvmOverloads constructor(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val metrics = labelPaint.fontMetrics
-        val labelHeight = metrics.descent - metrics.ascent
-        val desiredHeight = paddingTop + segmentHeight + verticalGap + markerHeight +
-            verticalGap + labelHeight + paddingBottom
+        val desiredHeight =
+            paddingTop + segmentHeight + verticalGap + markerHeight + paddingBottom
         setMeasuredDimension(
             resolveSize(suggestedMinimumWidth, widthMeasureSpec),
             resolveSize(desiredHeight.toInt(), heightMeasureSpec),
@@ -141,8 +128,6 @@ class SignalBarView @JvmOverloads constructor(
             .coerceIn(barLeft + halfMarker, barLeft + barWidth - halfMarker)
         val markerTop = paddingTop + segmentHeight + verticalGap
         if (dbm != null) drawMarker(canvas, markerCentre, markerTop)
-
-        drawLabel(canvas, barLeft, barWidth, markerCentre, markerTop + markerHeight + verticalGap)
     }
 
     private fun drawSegments(canvas: Canvas, barLeft: Float, barWidth: Float) {
@@ -176,21 +161,6 @@ class SignalBarView @JvmOverloads constructor(
         canvas.drawPath(markerPath, markerPaint)
     }
 
-    private fun drawLabel(
-        canvas: Canvas,
-        barLeft: Float,
-        barWidth: Float,
-        markerCentre: Float,
-        top: Float,
-    ) {
-        val text = dbm?.let { "$it dBm" } ?: NO_READING
-        val textWidth = labelPaint.measureText(text)
-        val ideal = markerCentre - textWidth / 2f
-        val maxLeft = (barLeft + barWidth - textWidth).coerceAtLeast(barLeft)
-        val left = ideal.coerceIn(barLeft, maxLeft)
-        canvas.drawText(text, left, top - labelPaint.fontMetrics.ascent, labelPaint)
-    }
-
     /** @param fraction 0f..1f across the bar. */
     private fun colourAt(fraction: Float): Int {
         val value = scale.min + fraction * (scale.max - scale.min)
@@ -201,18 +171,6 @@ class SignalBarView @JvmOverloads constructor(
         }
     }
 
-    private fun resolveTextColor(): Int {
-        val attributes = context.obtainStyledAttributes(intArrayOf(android.R.attr.textColorPrimary))
-        return try {
-            attributes.getColor(0, Color.GRAY)
-        } finally {
-            attributes.recycle()
-        }
-    }
-
     private fun dp(value: Float): Float =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
-
-    private fun sp(value: Float): Float =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value, resources.displayMetrics)
 }
