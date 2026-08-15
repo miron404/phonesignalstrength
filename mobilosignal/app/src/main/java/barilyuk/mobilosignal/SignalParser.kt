@@ -34,6 +34,15 @@ object SignalParser {
     /** SS-SINR / LTE RSSNR per 3GPP is -23..40 dB. */
     private val SINR_RANGE = -23..40
 
+    /** WCDMA Ec/No per 3GPP is -24..1 dB. */
+    private val ECNO_RANGE = -24..1
+
+    // Metric names are technical abbreviations that are not translated.
+    private const val RSRQ = "RSRQ"
+    private const val SINR = "SINR"
+    private const val ECNO = "Ec/No"
+    private const val BIT_ERRORS = "Bit errors"
+
     @Suppress("DEPRECATION") // NETWORK_TYPE_IDEN is deprecated but still reported by old modems.
     fun generationOf(networkType: Int): NetworkGeneration = when (networkType) {
         TelephonyManager.NETWORK_TYPE_GPRS,
@@ -118,22 +127,66 @@ object SignalParser {
         return when (chosen) {
             is CellSignalStrengthNr -> CellMetrics(
                 dbm = chosen.ssRsrp.asDbm() ?: chosen.dbm.asDbm(),
-                rsrq = chosen.ssRsrq.inRange(RSRQ_RANGE),
-                sinr = chosen.ssSinr.inRange(SINR_RANGE),
                 level = chosen.level,
+                extras = listOfNotNull(
+                    chosen.ssRsrq.inRange(RSRQ_RANGE)?.let { Metric(RSRQ, "$it dB") },
+                    chosen.ssSinr.inRange(SINR_RANGE)?.let { Metric(SINR, "$it dB") },
+                ),
             )
 
             is CellSignalStrengthLte -> CellMetrics(
                 dbm = chosen.rsrp.asDbm() ?: chosen.dbm.asDbm(),
-                rsrq = chosen.rsrq.inRange(RSRQ_RANGE),
-                // Some HALs report RSSNR in 0.1 dB units; those land outside the range and are
-                // dropped rather than shown as a nonsense number.
-                sinr = chosen.rssnr.inRange(SINR_RANGE),
                 level = chosen.level,
+                extras = listOfNotNull(
+                    chosen.rsrq.inRange(RSRQ_RANGE)?.let { Metric(RSRQ, "$it dB") },
+                    // Some HALs report RSSNR in 0.1 dB units; those land outside the range and
+                    // are dropped rather than shown as a nonsense number.
+                    chosen.rssnr.inRange(SINR_RANGE)?.let { Metric(SINR, "$it dB") },
+                ),
+            )
+
+            is CellSignalStrengthWcdma -> CellMetrics(
+                dbm = chosen.dbm.asDbm(),
+                level = chosen.level,
+                extras = listOfNotNull(ecNoOf(chosen)),
+            )
+
+            is CellSignalStrengthGsm -> CellMetrics(
+                dbm = chosen.dbm.asDbm(),
+                level = chosen.level,
+                extras = listOfNotNull(bitErrorRateOf(chosen.bitErrorRate)),
             )
 
             else -> CellMetrics(dbm = chosen.dbm.asDbm(), level = chosen.level)
         }
+    }
+
+    /** Ec/No is the 3G equivalent of RSRQ. Only exposed from API 30. */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun ecNoOf(strength: CellSignalStrengthWcdma): Metric? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
+        val ecNo = strength.ecNo.inRange(ECNO_RANGE) ?: return null
+        return Metric(ECNO, "$ecNo dB")
+    }
+
+    /**
+     * 2G reports an index rather than a rate, per 3GPP TS 27.007 8.5. The index on its own means
+     * nothing to a reader, so it is expanded into the error rate band it stands for. 99 means the
+     * modem has no measurement.
+     */
+    private fun bitErrorRateOf(index: Int): Metric? {
+        val band = when (index) {
+            0 -> "< 0.2%"
+            1 -> "0.2–0.4%"
+            2 -> "0.4–0.8%"
+            3 -> "0.8–1.6%"
+            4 -> "1.6–3.2%"
+            5 -> "3.2–6.4%"
+            6 -> "6.4–12.8%"
+            7 -> "> 12.8%"
+            else -> return null
+        }
+        return Metric(BIT_ERRORS, band)
     }
 
     /** API 26..28 only exposes the aggregate accessors. */

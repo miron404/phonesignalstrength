@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ColorRes
@@ -23,6 +24,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import barilyuk.mobilosignal.databinding.ActivityMainBinding
+import barilyuk.mobilosignal.databinding.ViewMetricBinding
 import barilyuk.mobilosignal.databinding.ViewSimCardBinding
 import kotlinx.coroutines.launch
 
@@ -145,6 +147,7 @@ class MainActivity : AppCompatActivity() {
         card.simTitle.text = getString(R.string.sim_title, getString(slotName), sim.operatorName)
         card.dbmValue.text = getString(R.string.dbm_value, sim.metrics.dbm?.toString() ?: "--")
         card.signalBar.setReading(sim.metrics.dbm, sim.generation)
+        renderMetrics(card.metricsRow, sim.metrics.extras)
 
         val colour = ContextCompat.getColor(this, sim.generation.colorRes())
         card.generationBadge.text = sim.generation.label
@@ -153,6 +156,24 @@ class MainActivity : AppCompatActivity() {
         // where a solid fill would need a different text colour for each.
         card.generationBadge.backgroundTintList =
             ColorStateList.valueOf(ColorUtils.setAlphaComponent(colour, BADGE_FILL_ALPHA))
+    }
+
+    /**
+     * The set of metrics changes only when the technology does, but the readings themselves
+     * update constantly, so the rows are rebuilt only when the content actually differs.
+     */
+    private fun renderMetrics(row: LinearLayout, metrics: List<Metric>) {
+        if (row.getTag(R.id.metricsRow) == metrics) return
+        row.setTag(R.id.metricsRow, metrics)
+
+        row.removeAllViews()
+        row.visibility = if (metrics.isEmpty()) View.GONE else View.VISIBLE
+        for (metric in metrics) {
+            val item = ViewMetricBinding.inflate(layoutInflater, row, false)
+            item.metricLabel.text = metric.label
+            item.metricValue.text = metric.value
+            row.addView(item.root)
+        }
     }
 
     /** Green for 4G/5G, amber for 3G, red for 2G and no service. */

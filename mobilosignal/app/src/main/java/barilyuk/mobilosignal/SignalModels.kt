@@ -39,18 +39,23 @@ val NetworkGeneration.scale: SignalScale
     }
 
 /**
- * Signal metrics for one SIM. Every field is null when the modem or the vendor HAL does not
- * report it, which is common: SINR in particular is missing on a lot of devices.
+ * A secondary reading, already formatted. Which ones exist depends on the technology: RSRQ and
+ * SINR on LTE/NR, Ec/No on 3G, bit error rate on 2G. Anything the modem does not report is simply
+ * absent from the list rather than being carried around as a null to render as a dash.
+ */
+data class Metric(val label: String, val value: String)
+
+/**
+ * Signal metrics for one SIM. [dbm] is null when the modem or the vendor HAL does not report it,
+ * which is common.
  */
 data class CellMetrics(
     /** Primary strength, dBm. RSRP on LTE/NR, RSSI on 2G/3G. */
     val dbm: Int? = null,
-    /** Reference signal received quality, dB. LTE/NR only. */
-    val rsrq: Int? = null,
-    /** Signal to interference-plus-noise ratio, dB. LTE/NR only. */
-    val sinr: Int? = null,
     /** The framework's own 0..4 bucket, i.e. how many bars the system would draw. */
     val level: Int = 0,
+    /** Quality metrics for the technology in use; empty when none are available. */
+    val extras: List<Metric> = emptyList(),
 ) {
     companion object {
         val EMPTY = CellMetrics()
