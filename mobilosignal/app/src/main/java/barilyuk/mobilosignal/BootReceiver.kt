@@ -9,7 +9,7 @@ class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
-        if (!Prefs.isAutoStartEnabled(context)) {
+        if (!Prefs.isAutoStartEnabled(context) || !Prefs.isPersistentNotificationEnabled(context)) {
             Log.d(TAG, "Auto start disabled, ignoring boot")
             return
         }

@@ -12,6 +12,7 @@ object Prefs {
     const val KEY_SELECTED_SLOT = "selected_sim_slot"
     const val KEY_AUTO_START = "AutoStart"
     const val KEY_ICON_BLACK = "RadioChosenBlack"
+    const val KEY_PERSISTENT_NOTIFICATION = "persistent_notification"
 
     /**
      * Older builds stored the checked RadioButton's `R.id` here. Resource ids are not stable
@@ -38,14 +39,10 @@ object Prefs {
     fun isAutoStartEnabled(context: Context): Boolean =
         of(context).getBoolean(KEY_AUTO_START, false)
 
-    fun setAutoStartEnabled(context: Context, enabled: Boolean) {
-        of(context).edit { putBoolean(KEY_AUTO_START, enabled) }
-    }
-
     fun isIconTextBlack(context: Context): Boolean =
         of(context).getBoolean(KEY_ICON_BLACK, false)
 
-    fun setIconTextBlack(context: Context, black: Boolean) {
-        of(context).edit { putBoolean(KEY_ICON_BLACK, black) }
-    }
+    /** When off the app runs without a foreground service, i.e. only while it is open. */
+    fun isPersistentNotificationEnabled(context: Context): Boolean =
+        of(context).getBoolean(KEY_PERSISTENT_NOTIFICATION, true)
 }

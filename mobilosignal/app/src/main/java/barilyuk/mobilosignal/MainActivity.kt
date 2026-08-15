@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
                 SignalRepository.refresh()
-                startSignalService()
+                if (Prefs.isPersistentNotificationEnabled(this)) startSignalService()
             } else {
                 Toast.makeText(this, "Permission denied, cannot read SIM signal", Toast.LENGTH_LONG)
                     .show()
@@ -99,7 +99,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (hasPhoneStatePermission()) startSignalService()
+        // With the notification switched off there is no service at all; the reading comes
+        // straight from the repository while this screen is open.
+        if (hasPhoneStatePermission() && Prefs.isPersistentNotificationEnabled(this)) {
+            startSignalService()
+        }
     }
 
     override fun onStop() {
@@ -114,16 +118,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpControls() {
-        binding.autostartCheckBox.isChecked = Prefs.isAutoStartEnabled(this)
-        binding.autostartCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            Prefs.setAutoStartEnabled(this, isChecked)
-        }
-
-        val iconTextBlack = Prefs.isIconTextBlack(this)
-        binding.radioBlack.isChecked = iconTextBlack
-        binding.radioWhite.isChecked = !iconTextBlack
-        binding.textColorRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            Prefs.setIconTextBlack(this, checkedId == R.id.radioBlack)
+        binding.settingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         binding.exitButton.setOnClickListener {

@@ -10,6 +10,7 @@ activity = "1.8.0"
 constraintlayout = "2.2.1"
 coreKtx = "1.13.1"
 lifecycle = "2.7.0"
+preference = "1.2.1"
 coroutines = "1.7.3"
 
 [libraries]
@@ -22,6 +23,7 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 
 [plugins]

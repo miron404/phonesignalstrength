@@ -161,63 +161,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleTextView" />
 
-    <!-- Notification icon color selector -->
-    <RadioGroup
-        android:id="@+id/textColorRadioGroup"
+    <Button
+        android:id="@+id/settingsButton"
+        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="@+id/exitButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/exitButton"
-        app:layout_constraintTop_toTopOf="@+id/exitButton">
-
-        <TextView
-            android:id="@+id/iconColorLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="52dp"
-            android:layout_gravity="center_vertical"
-            android:breakStrategy="simple"
-            android:gravity="center_horizontal"
-            android:maxLines="2"
-            android:text="@string/status_bar_icon_color"
-            android:textColor="?android:textColorPrimary"
-            android:textSize="18sp" />
-
-        <RadioButton
-            android:id="@+id/radioBlack"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:text="@string/black_text" />
-
-        <RadioButton
-            android:id="@+id/radioWhite"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:text="@string/white_text" />
-    </RadioGroup>
-
-    <CheckBox
-        android:id="@+id/autostartCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:autoSizeMaxTextSize="15sp"
-        android:autoSizeMinTextSize="5sp"
+        android:autoSizeMaxTextSize="20sp"
+        android:autoSizeMinTextSize="8sp"
         android:autoSizeTextType="uniform"
-        android:text="@string/enable_auto_start"
-        android:textColor="?android:textColorPrimary"
+        android:padding="10dp"
+        android:text="@string/settings_button"
+        android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="@+id/exitButton"
         app:layout_constraintEnd_toStartOf="@+id/exitButton"
-        app:layout_constraintHorizontal_bias="0.369"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/eb43githubio" />
+        app:layout_constraintTop_toTopOf="@+id/exitButton" />
 
     <TextView
         android:id="@+id/eb43githubio"

@@ -12,12 +12,18 @@
     <string name="no_signal_reading">No signal reading</string>
     <string name="signal_reading">%1$d dBm on %2$s</string>
 
-    <string name="status_bar_icon_color">Status bar\nicon color:</string>
-    <string name="black_text">Black\nText</string>
-    <string name="white_text">White\nText</string>
-    <string name="enable_auto_start">Enable \n Auto \n Start</string>
     <string name="author_credit">Eugen Barilyuk\neb43.github.io</string>
     <string name="kill_app_and_exit">&#128683; &#9760; ❌ \n Kill app \n &amp; \n Exit</string>
+    <string name="settings_button">⚙\nSettings</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_category_status_bar">Status bar</string>
+    <string name="pref_persistent_notification">Persistent notification</string>
+    <string name="pref_persistent_notification_summary">Keep the signal reading in the status bar. Turn this off to use the app only while it is open — Android does not allow background monitoring without a notification.</string>
+    <string name="pref_dark_icon">Dark icon text</string>
+    <string name="pref_dark_icon_summary">Draw the status bar number as black text on white instead of white on transparent.</string>
+    <string name="pref_auto_start">Start on boot</string>
+    <string name="pref_auto_start_summary">Show the notification again after the phone restarts.</string>
 
     <!-- Design-time placeholder only; the service always sets the real text. -->
     <string name="notification_placeholder">Signal strength</string>
