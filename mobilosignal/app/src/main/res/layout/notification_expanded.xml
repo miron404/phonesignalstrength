@@ -6,14 +6,12 @@
     android:padding="10dp"
     android:background="@android:color/transparent">
 
-    <!-- Expanded notification layout with detailed voltage text -->
     <TextView
         android:id="@+id/notification_text_expanded"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Battery Voltage: 0.0 V"
-        android:textColor="?android:textColorPrimary"
-        android:textSize="18sp"
         android:paddingTop="5dp"
-        android:paddingBottom="5dp" />
+        android:paddingBottom="5dp"
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+        android:text="@string/notification_placeholder" />
 </LinearLayout>

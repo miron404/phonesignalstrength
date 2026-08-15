@@ -3,12 +3,16 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 
+    <!--
+      The text appearance has to come from androidx's notification styles: "?android:textColorPrimary"
+      resolves against the app theme rather than the notification shade, which produced white text
+      on a white background on some devices.
+    -->
     <TextView
         android:id="@+id/notification_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Battery Voltage: "
-        android:textSize="16sp"
-        android:textColor="?android:textColorPrimary" />
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+        android:text="@string/notification_placeholder" />
 
 </RelativeLayout>

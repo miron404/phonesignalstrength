@@ -138,7 +138,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:text="SIM:"
-            android:textAlignment="center"
             android:textSize="18sp" />
 
         <RadioButton
@@ -185,9 +184,9 @@
             android:layout_height="52dp"
             android:layout_gravity="center_vertical"
             android:breakStrategy="simple"
+            android:gravity="center_horizontal"
             android:maxLines="2"
             android:text="Status bar\nicon color:"
-            android:textAlignment="center"
             android:textSize="18sp"
             />
 
