@@ -13,6 +13,7 @@ object Prefs {
     const val KEY_AUTO_START = "AutoStart"
     const val KEY_ICON_BLACK = "RadioChosenBlack"
     const val KEY_PERSISTENT_NOTIFICATION = "persistent_notification"
+    const val KEY_DYNAMIC_COLOUR = "dynamic_colour"
 
     /**
      * Older builds stored the checked RadioButton's `R.id` here. Resource ids are not stable
@@ -45,4 +46,7 @@ object Prefs {
     /** When off the app runs without a foreground service, i.e. only while it is open. */
     fun isPersistentNotificationEnabled(context: Context): Boolean =
         of(context).getBoolean(KEY_PERSISTENT_NOTIFICATION, true)
+
+    fun isDynamicColourEnabled(context: Context): Boolean =
+        of(context).getBoolean(KEY_DYNAMIC_COLOUR, true)
 }

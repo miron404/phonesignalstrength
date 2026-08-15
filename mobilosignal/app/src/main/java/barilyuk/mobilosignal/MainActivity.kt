@@ -15,6 +15,8 @@ import androidx.annotation.ColorRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -27,6 +29,8 @@ class MainActivity : AppCompatActivity() {
 
     /** Tracked so it can be dismissed in onDestroy instead of leaking the window. */
     private var permissionDialog: AlertDialog? = null
+
+    private var dynamicColourApplied = false
 
     /** The views making up one SIM's row, so both rows can share the rendering code. */
     private class SimViews(
@@ -60,8 +64,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dynamicColourApplied = Theming.apply(this)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyInsets()
 
         sim1Views = SimViews(
             label = binding.sim1OperatorLabel,
@@ -99,6 +106,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (Theming.isEnabled(this) != dynamicColourApplied) {
+            recreate()
+            return
+        }
         // With the notification switched off there is no service at all; the reading comes
         // straight from the repository while this screen is open.
         if (hasPhoneStatePermission() && Prefs.isPersistentNotificationEnabled(this)) {
@@ -117,15 +128,28 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    /** targetSdk 35 means the window is edge to edge, so the bars no longer reserve space. */
+    private fun applyInsets() {
+        val base = resources.getDimensionPixelSize(R.dimen.screen_padding)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(
+                base + bars.left,
+                base + bars.top,
+                base + bars.right,
+                base + bars.bottom,
+            )
+            WindowInsetsCompat.CONSUMED
+        }
+    }
+
     private fun setUpControls() {
         binding.settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        binding.exitButton.setOnClickListener {
-            stopService(Intent(this, SignalStrengthService::class.java))
-            finishAndRemoveTask()
-        }
     }
 
     private fun render(state: SignalState) {

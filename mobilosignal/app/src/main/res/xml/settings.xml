@@ -26,4 +26,23 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/settings_category_appearance">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="dynamic_colour"
+            app:summary="@string/pref_dynamic_colour_summary"
+            app:title="@string/pref_dynamic_colour" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/settings_category_app">
+
+        <Preference
+            app:key="kill_app"
+            app:summary="@string/pref_kill_app_summary"
+            app:title="@string/pref_kill_app" />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

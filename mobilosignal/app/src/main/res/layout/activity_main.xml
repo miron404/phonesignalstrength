@@ -3,8 +3,19 @@
     android:id="@+id/relativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:colorBackground"
-    android:padding="16dp">
+    android:background="?android:colorBackground">
+
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/settings_title"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_settings"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorOnSurfaceVariant" />
 
     <ImageView
         android:id="@+id/appIcon"
@@ -160,50 +171,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleTextView" />
-
-    <Button
-        android:id="@+id/settingsButton"
-        style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:autoSizeMaxTextSize="20sp"
-        android:autoSizeMinTextSize="8sp"
-        android:autoSizeTextType="uniform"
-        android:padding="10dp"
-        android:text="@string/settings_button"
-        android:textAlignment="center"
-        app:layout_constraintBottom_toBottomOf="@+id/exitButton"
-        app:layout_constraintEnd_toStartOf="@+id/exitButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/exitButton" />
-
-    <TextView
-        android:id="@+id/eb43githubio"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/author_credit"
-        android:textAlignment="center"
-        android:textColor="?android:textColorSecondary"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/exitButton"
-        app:layout_constraintEnd_toEndOf="@+id/exitButton"
-        app:layout_constraintStart_toStartOf="@+id/exitButton" />
-
-    <Button
-        android:id="@+id/exitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:autoSizeMaxTextSize="27sp"
-        android:autoSizeMinTextSize="8sp"
-        android:autoSizeTextType="uniform"
-        android:padding="10dp"
-        android:text="@string/kill_app_and_exit"
-        android:textAlignment="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.532"
-        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
