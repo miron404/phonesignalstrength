@@ -1,6 +1,9 @@
 <!--
   Monochrome wordmark logo: four ascending signal bars. Tinted at the usage site so it can pick
   up the dynamic accent colour.
+
+  The bars sit flush on the bottom edge of the viewport on purpose: the view's bottom is
+  constrained to the wordmark's text baseline, so the bars and the letters share one line.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
@@ -9,5 +12,5 @@
     android:viewportHeight="24">
     <path
         android:fillColor="@android:color/white"
-        android:pathData="M3,16.5h3v4.5h-3z M8,12.5h3v8.5h-3z M13,8.5h3v12.5h-3z M18,4.5h3v16.5h-3z" />
+        android:pathData="M3,19.5h3v4.5h-3z M8,15.5h3v8.5h-3z M13,11.5h3v12.5h-3z M18,7.5h3v16.5h-3z" />
 </vector>

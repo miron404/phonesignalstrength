@@ -5,15 +5,19 @@
     android:layout_height="match_parent"
     android:background="?android:colorBackground">
 
+    <!--
+      The logo's bottom sits on the wordmark's text baseline rather than being centred against
+      it, so the bars and the letters rest on one line.
+    -->
     <ImageView
         android:id="@+id/appLogo"
         android:layout_width="24dp"
         android:layout_height="24dp"
+        android:baselineAlignBottom="true"
         android:contentDescription="@null"
         android:src="@drawable/ic_app_logo"
-        app:layout_constraintBottom_toBottomOf="@+id/settingsButton"
+        app:layout_constraintBaseline_toBaselineOf="@+id/appName"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/settingsButton"
         app:tint="?attr/colorPrimary" />
 
     <TextView
@@ -25,9 +29,9 @@
         android:textColor="?android:textColorPrimary"
         android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/appLogo"
+        app:layout_constraintBottom_toBottomOf="@+id/settingsButton"
         app:layout_constraintStart_toEndOf="@+id/appLogo"
-        app:layout_constraintTop_toTopOf="@+id/appLogo" />
+        app:layout_constraintTop_toTopOf="@+id/settingsButton" />
 
     <ImageButton
         android:id="@+id/settingsButton"
