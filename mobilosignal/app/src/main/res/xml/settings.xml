@@ -26,6 +26,17 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/settings_category_updates">
+
+        <ListPreference
+            app:defaultValue="0"
+            app:entries="@array/update_rate_entries"
+            app:entryValues="@array/update_rate_values"
+            app:key="update_rate_seconds"
+            app:title="@string/pref_update_rate" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/settings_category_appearance">
 
         <SwitchPreferenceCompat

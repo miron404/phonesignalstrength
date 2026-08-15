@@ -1,11 +1,13 @@
 package barilyuk.mobilosignal
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
@@ -73,6 +75,15 @@ class SettingsActivity : AppCompatActivity() {
                     // Posted so the new value is persisted before the activity is rebuilt.
                     view?.post { activity?.recreate() }
                     true
+                }
+            }
+
+            findPreference<ListPreference>(Prefs.KEY_UPDATE_RATE)?.apply {
+                // getSignalStrength() arrived in API 28; there is nothing to poll below that.
+                isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                // Show the chosen rate and the cost of it together.
+                summaryProvider = Preference.SummaryProvider<ListPreference> { preference ->
+                    "${preference.entry}\n${getString(R.string.pref_update_rate_hint)}"
                 }
             }
 
