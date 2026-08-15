@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.PhoneStateListener
 import android.telephony.SignalStrength
+import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyDisplayInfo
@@ -167,13 +168,25 @@ object SignalRepository {
             slots[slot] = SimSignal(
                 slotIndex = slot,
                 subscriptionId = info.subscriptionId,
-                displayName = info.displayName?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
-                    ?: "SIM ${slot + 1}",
+                operatorName = operatorNameOf(info, perSim),
             )
             registrations += Registration(slot, perSim).also { it.register() }
         }
         emit()
     }
+
+    /**
+     * getCarrierName() is the network's own name; getDisplayName() is the label the user may have
+     * renamed in system settings, and getSimOperatorName() is the last resort.
+     */
+    private fun operatorNameOf(info: SubscriptionInfo, perSim: TelephonyManager): String =
+        sequenceOf(
+            info.carrierName?.toString(),
+            info.displayName?.toString(),
+            runCatching { perSim.simOperatorName }.getOrNull(),
+        ).map { it?.trim().orEmpty() }
+            .firstOrNull { it.isNotEmpty() }
+            ?: "—"
 
     private fun unregisterAll() {
         registrations.forEach { it.unregister() }

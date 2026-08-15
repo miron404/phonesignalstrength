@@ -1,166 +1,217 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/relativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_centerHorizontal="true"
     android:background="?android:colorBackground"
     android:padding="16dp">
-
 
     <ImageView
         android:id="@+id/appIcon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8sp"
+        android:layout_marginTop="8dp"
+        android:contentDescription="@string/app_name"
         android:scaleX="1.2"
         android:scaleY="1.2"
         android:src="@mipmap/ic_launcher"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/batvoltageTextView"
+        android:id="@+id/titleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="Phone Signal Strength:"
+        android:layout_marginTop="12dp"
+        android:text="@string/title_signal_strength"
         android:textAlignment="center"
-        android:textSize="34sp"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="28sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appIcon"
-        app:layout_constraintVertical_bias="0.168" />
+        app:layout_constraintTop_toBottomOf="@+id/appIcon" />
+
+    <!-- ============ SIM 1 ============ -->
+    <TextView
+        android:id="@+id/sim1OperatorLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/sim_1"
+        android:textColor="?android:textColorSecondary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/titleTextView" />
 
     <TextView
-        android:id="@+id/signalstrengthTextView"
-        android:layout_width="wrap_content"
+        android:id="@+id/sim1OperatorName"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:text="📶 -0 dBm 0G"
-        android:textAlignment="center"
-        android:textSize="36sp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="20dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/no_value"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/sim1OperatorLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/sim1OperatorLabel"
+        app:layout_constraintTop_toTopOf="@+id/sim1OperatorLabel" />
+
+    <TextView
+        android:id="@+id/tvSim1Signal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="20dp"
+        android:text="@string/signal_placeholder"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/batvoltageTextView" />
+        app:layout_constraintTop_toBottomOf="@+id/sim1OperatorName" />
 
-    <!-- Custom Signal Strength Indicator Container -->
     <RelativeLayout
-        android:id="@+id/signalIndicatorContainer"
-        android:layout_width="300dp"
-        android:layout_height="80dp"
-        android:layout_marginTop="30dp"
+        android:id="@+id/sim1IndicatorContainer"
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/signalstrengthTextView">
+        app:layout_constraintTop_toBottomOf="@+id/tvSim1Signal">
 
-        <!-- Gradient Signal Bar -->
         <View
-            android:id="@+id/signalGradientBar"
-            android:layout_width="280dp"
-            android:layout_height="40dp"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/signal_gradient" />
-
-        <!-- Signal Marker Triangle -->
-        <View
-            android:id="@+id/signalMarker"
-            android:layout_width="20dp"
+            android:id="@+id/sim1GradientBar"
+            android:layout_width="match_parent"
             android:layout_height="20dp"
             android:layout_marginTop="10dp"
+            android:background="@drawable/signal_gradient" />
+
+        <View
+            android:id="@+id/sim1Marker"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="4dp"
             android:background="@drawable/triangle_marker" />
 
-        <!-- dBm Value Text -->
         <TextView
-            android:id="@+id/dbmValueText"
+            android:id="@+id/sim1DbmText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/signalMarker"
-            android:layout_marginTop="5dp"
-            android:text=" XX dBm"
+            android:layout_below="@id/sim1Marker"
+            android:layout_marginTop="2dp"
+            android:text="@string/dbm_placeholder"
             android:textColor="?android:textColorPrimary"
-            android:textSize="16sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="20dp"
-            android:visibility="invisible">
-
-            <TextView
-                android:id="@+id/tvSim1Signal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="SIM 1 Signal: N/A"
-                android:textSize="24sp" />
-
-            <TextView
-                android:id="@+id/tvSim2Signal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="SIM 2 Signal: N/A"
-                android:textSize="24sp" />
-        </LinearLayout>
-
     </RelativeLayout>
 
-    <!-- RadioGroup for Text Color Selection - moved above exit button -->
-    <!-- SIM Selection RadioGroup -->
-
-
-    <RadioGroup
-        android:id="@+id/simSelectionRadioGroup"
+    <!-- ============ SIM 2 ============ -->
+    <TextView
+        android:id="@+id/sim2OperatorLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="36dp"
-        android:layout_marginEnd="36dp"
-        android:orientation="horizontal"
-        android:visibility="visible"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:text="@string/sim_2"
+        android:textColor="?android:textColorSecondary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sim1IndicatorContainer" />
+
+    <TextView
+        android:id="@+id/sim2OperatorName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="20dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/no_value"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/sim2OperatorLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/sim2OperatorLabel"
+        app:layout_constraintTop_toTopOf="@+id/sim2OperatorLabel" />
+
+    <TextView
+        android:id="@+id/tvSim2Signal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="20dp"
+        android:text="@string/signal_placeholder"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/signalIndicatorContainer">
+        app:layout_constraintTop_toBottomOf="@+id/sim2OperatorName" />
+
+    <RelativeLayout
+        android:id="@+id/sim2IndicatorContainer"
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvSim2Signal">
+
+        <View
+            android:id="@+id/sim2GradientBar"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/signal_gradient" />
+
+        <View
+            android:id="@+id/sim2Marker"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/triangle_marker" />
 
         <TextView
-            android:id="@+id/simSelectionLabel"
+            android:id="@+id/sim2DbmText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="SIM:"
-            android:textSize="18sp" />
+            android:layout_below="@id/sim2Marker"
+            android:layout_marginTop="2dp"
+            android:text="@string/dbm_placeholder"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
 
-        <RadioButton
-            android:id="@+id/radioSim1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:checked="true"
-            android:text="SIM 1" />
-
-        <RadioButton
-            android:id="@+id/radioSim2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:text="SIM 2" />
-    </RadioGroup>
-
-
-
-
-
-
+    <!-- Shown when no SIM is readable at all. -->
+    <TextView
+        android:id="@+id/noSimText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="20dp"
+        android:text="@string/no_sim"
+        android:textAlignment="center"
+        android:textColor="?android:textColorSecondary"
+        android:textSize="18sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/titleTextView" />
 
     <!-- Notification icon color selector -->
     <RadioGroup
@@ -168,45 +219,41 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="16dp"
         android:orientation="vertical"
-        app:layout_constraintTop_toTopOf="@+id/exitButton"
         app:layout_constraintBottom_toBottomOf="@+id/exitButton"
-        app:layout_constraintStart_toEndOf="@+id/exitButton"
         app:layout_constraintEnd_toEndOf="parent"
-        >
+        app:layout_constraintStart_toEndOf="@+id/exitButton"
+        app:layout_constraintTop_toTopOf="@+id/exitButton">
 
         <TextView
-            android:id="@+id/editTextText"
+            android:id="@+id/iconColorLabel"
             android:layout_width="wrap_content"
             android:layout_height="52dp"
             android:layout_gravity="center_vertical"
             android:breakStrategy="simple"
             android:gravity="center_horizontal"
             android:maxLines="2"
-            android:text="Status bar\nicon color:"
-            android:textSize="18sp"
-            />
+            android:text="@string/status_bar_icon_color"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="18sp" />
 
         <RadioButton
             android:id="@+id/radioBlack"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:checked="true"
-            android:text="Black\nText" />
+            android:text="@string/black_text" />
 
         <RadioButton
             android:id="@+id/radioWhite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:text="White\nText" />
+            android:text="@string/white_text" />
     </RadioGroup>
-
-    <!-- Auto Start CheckBox -->
 
     <CheckBox
         android:id="@+id/autostartCheckBox"
@@ -216,12 +263,11 @@
         android:autoSizeMaxTextSize="15sp"
         android:autoSizeMinTextSize="5sp"
         android:autoSizeTextType="uniform"
-        android:text="Enable \n Auto \n Start"
-
+        android:text="@string/enable_auto_start"
+        android:textColor="?android:textColorPrimary"
         app:layout_constraintBottom_toBottomOf="@+id/exitButton"
         app:layout_constraintEnd_toStartOf="@+id/exitButton"
         app:layout_constraintHorizontal_bias="0.369"
-
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/eb43githubio" />
 
@@ -229,17 +275,14 @@
         android:id="@+id/eb43githubio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Eugen Barilyuk\neb43.github.io"
+        android:text="@string/author_credit"
         android:textAlignment="center"
         android:textColor="?android:textColorSecondary"
         android:textSize="14sp"
         app:layout_constraintBottom_toTopOf="@+id/exitButton"
-
         app:layout_constraintEnd_toEndOf="@+id/exitButton"
-        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="@+id/exitButton" />
 
-    <!-- Exit Button-->
     <Button
         android:id="@+id/exitButton"
         android:layout_width="wrap_content"
@@ -248,33 +291,12 @@
         android:autoSizeMaxTextSize="27sp"
         android:autoSizeMinTextSize="8sp"
         android:autoSizeTextType="uniform"
-        android:layoutDirection="inherit"
         android:padding="10dp"
-        android:paddingStart="10dp"
-        android:paddingLeft="10dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="10dp"
-        android:paddingRight="10dp"
-        android:paddingBottom="10dp"
-        android:text="&#128683; &#9760; ❌ \n Kill app \n &amp; \n Exit"
+        android:text="@string/kill_app_and_exit"
         android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.532"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_begin="20dp" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_begin="20dp" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

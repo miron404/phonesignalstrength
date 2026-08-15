@@ -31,7 +31,8 @@ data class CellMetrics(
 data class SimSignal(
     val slotIndex: Int,
     val subscriptionId: Int,
-    val displayName: String,
+    /** Carrier name as reported by the SIM, e.g. "Vodafone". */
+    val operatorName: String,
     val generation: NetworkGeneration = NetworkGeneration.UNKNOWN,
     val metrics: CellMetrics = CellMetrics.EMPTY,
 )
@@ -42,9 +43,17 @@ data class SignalState(
 ) {
     val isDualSim: Boolean get() = sims.size > 1
 
-    fun hasSlot(slot: Int): Boolean = sims.any { it.slotIndex == slot }
+    fun slot(index: Int): SimSignal? = sims.firstOrNull { it.slotIndex == index }
 
     /** The SIM the user picked, falling back to whatever is actually present. */
     val selected: SimSignal?
-        get() = sims.firstOrNull { it.slotIndex == selectedSlot } ?: sims.firstOrNull()
+        get() = slot(selectedSlot) ?: sims.firstOrNull()
+
+    /**
+     * The SIM with the best reading. The status bar icon can only carry one number, so with two
+     * SIMs it shows whichever is actually receiving better.
+     */
+    val strongest: SimSignal?
+        get() = sims.filter { it.metrics.dbm != null }.maxByOrNull { it.metrics.dbm ?: Int.MIN_VALUE }
+            ?: sims.firstOrNull()
 }

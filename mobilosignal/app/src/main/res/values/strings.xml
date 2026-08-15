@@ -1,5 +1,21 @@
 <resources>
     <string name="app_name">MobiloSignal</string>
+
+    <string name="title_signal_strength">Phone Signal Strength:</string>
+    <string name="sim_1">SIM 1</string>
+    <string name="sim_2">SIM 2</string>
+    <string name="no_value">---</string>
+    <string name="signal_placeholder">📶 N/A</string>
+    <string name="dbm_placeholder">-- dBm</string>
+    <string name="no_sim">No SIM detected</string>
+
+    <string name="status_bar_icon_color">Status bar\nicon color:</string>
+    <string name="black_text">Black\nText</string>
+    <string name="white_text">White\nText</string>
+    <string name="enable_auto_start">Enable \n Auto \n Start</string>
+    <string name="author_credit">Eugen Barilyuk\neb43.github.io</string>
+    <string name="kill_app_and_exit">&#128683; &#9760; ❌ \n Kill app \n &amp; \n Exit</string>
+
     <!-- Design-time placeholder only; the service always sets the real text. -->
     <string name="notification_placeholder">Signal strength</string>
 </resources>

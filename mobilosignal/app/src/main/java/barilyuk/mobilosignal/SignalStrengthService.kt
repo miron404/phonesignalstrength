@@ -43,7 +43,14 @@ class SignalStrengthService : Service() {
         Log.d(TAG, "Service created")
 
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification(placeholderContent(), NO_READING))
+        startForeground(
+            NOTIFICATION_ID,
+            buildNotification(
+                placeholderContent(),
+                "Signal strength: ${placeholderContent()}",
+                NO_READING,
+            ),
+        )
 
         SignalRepository.acquire(this)
         Prefs.of(this).registerOnSharedPreferenceChangeListener(prefsListener)
@@ -68,30 +75,55 @@ class SignalStrengthService : Service() {
     private fun placeholderContent(): String =
         "$NO_READING (${NetworkGeneration.UNKNOWN.label})"
 
-    private fun render(state: SignalState) {
-        val sim = state.selected
-        val dbm = sim?.metrics?.dbm
-        val generation = sim?.generation ?: NetworkGeneration.UNKNOWN
-        val simSuffix = if (state.isDualSim && sim != null) " (SIM${sim.slotIndex + 1})" else ""
-
-        val value = if (dbm == null) NO_READING else "$dbm dBm"
-        val content = "$value (${generation.label})$simSuffix"
-        if (content == lastContent) return
-        lastContent = content
-
-        val iconText = dbm?.toString() ?: NO_READING
-        val manager = getSystemService(NotificationManager::class.java)
-        manager?.notify(NOTIFICATION_ID, buildNotification(content, iconText))
+    private fun reading(sim: SimSignal): String {
+        val value = sim.metrics.dbm?.let { "$it dBm" } ?: NO_READING
+        return "$value (${sim.generation.label})"
     }
 
-    private fun buildNotification(content: String, iconText: String): Notification {
+    private fun render(state: SignalState) {
+        // With two SIMs both are listed; the icon can only carry one number, so it follows
+        // whichever SIM is actually receiving better.
+        val collapsed: String
+        val expanded: String
+        when {
+            state.sims.isEmpty() -> {
+                collapsed = placeholderContent()
+                expanded = "Signal strength: ${placeholderContent()}"
+            }
+
+            state.isDualSim -> {
+                collapsed = state.sims.joinToString(" | ") { "SIM${it.slotIndex + 1}: ${reading(it)}" }
+                expanded = "Signal strength\n" +
+                    state.sims.joinToString("\n") { "  SIM ${it.slotIndex + 1}: ${reading(it)}" }
+            }
+
+            else -> {
+                val sim = state.sims.first()
+                collapsed = reading(sim)
+                expanded = "Signal strength: ${reading(sim)}"
+            }
+        }
+
+        if (collapsed == lastContent) return
+        lastContent = collapsed
+
+        val iconText = state.strongest?.metrics?.dbm?.toString() ?: NO_READING
+        val manager = getSystemService(NotificationManager::class.java)
+        manager?.notify(NOTIFICATION_ID, buildNotification(collapsed, expanded, iconText))
+    }
+
+    private fun buildNotification(
+        collapsedText: String,
+        expandedText: String,
+        iconText: String,
+    ): Notification {
         val textColor = if (Prefs.isIconTextBlack(this)) Color.BLACK else Color.WHITE
 
         val collapsed = RemoteViews(packageName, R.layout.notification).apply {
-            setTextViewText(R.id.notification_text, "📶 $content")
+            setTextViewText(R.id.notification_text, "📶 $collapsedText")
         }
         val expanded = RemoteViews(packageName, R.layout.notification_expanded).apply {
-            setTextViewText(R.id.notification_text_expanded, "📶 Signal strength: $content")
+            setTextViewText(R.id.notification_text_expanded, "📶 $expandedText")
         }
 
         val contentIntent = PendingIntent.getActivity(

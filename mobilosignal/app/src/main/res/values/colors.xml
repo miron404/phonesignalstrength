@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Signal line colour by network generation. -->
+    <color name="generation_good">#FF00801A</color>
+    <color name="generation_fair">#FF9A6B00</color>
+    <color name="generation_poor">#FFC62828</color>
 </resources>

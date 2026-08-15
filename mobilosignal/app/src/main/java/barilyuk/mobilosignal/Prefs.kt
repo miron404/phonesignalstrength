@@ -15,7 +15,8 @@ object Prefs {
 
     /**
      * Older builds stored the checked RadioButton's `R.id` here. Resource ids are not stable
-     * across builds, so the value is migrated once on a best-effort basis and then dropped.
+     * across builds and that RadioGroup no longer exists, so the value is simply discarded: both
+     * SIMs are displayed now, and the icon follows the strongest one.
      */
     private const val LEGACY_KEY_SELECTED_SIM = "selected_sim"
 
@@ -24,14 +25,8 @@ object Prefs {
 
     fun selectedSlot(context: Context): Int {
         val prefs = of(context)
-        if (!prefs.contains(KEY_SELECTED_SLOT) && prefs.contains(LEGACY_KEY_SELECTED_SIM)) {
-            val legacy = prefs.getInt(LEGACY_KEY_SELECTED_SIM, 0)
-            val slot = if (legacy == R.id.radioSim2) 1 else 0
-            prefs.edit {
-                putInt(KEY_SELECTED_SLOT, slot)
-                remove(LEGACY_KEY_SELECTED_SIM)
-            }
-            return slot
+        if (prefs.contains(LEGACY_KEY_SELECTED_SIM)) {
+            prefs.edit { remove(LEGACY_KEY_SELECTED_SIM) }
         }
         return prefs.getInt(KEY_SELECTED_SLOT, 0)
     }

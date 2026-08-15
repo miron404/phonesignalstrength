@@ -9,8 +9,10 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.RelativeLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.ColorRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -27,8 +29,19 @@ class MainActivity : AppCompatActivity() {
     /** Tracked so it can be dismissed in onDestroy instead of leaking the window. */
     private var permissionDialog: AlertDialog? = null
 
-    /** Guards against the radio group's listener firing while the UI is being updated. */
-    private var updatingSimSelection = false
+    /** The views making up one SIM's row, so both rows can share the rendering code. */
+    private class SimViews(
+        val label: View,
+        val operatorName: TextView,
+        val signalText: TextView,
+        val container: View,
+        val gradientBar: View,
+        val marker: View,
+        val dbmText: TextView,
+    )
+
+    private lateinit var sim1Views: SimViews
+    private lateinit var sim2Views: SimViews
 
     private val requestPhoneState =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -53,6 +66,25 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        sim1Views = SimViews(
+            label = binding.sim1OperatorLabel,
+            operatorName = binding.sim1OperatorName,
+            signalText = binding.tvSim1Signal,
+            container = binding.sim1IndicatorContainer,
+            gradientBar = binding.sim1GradientBar,
+            marker = binding.sim1Marker,
+            dbmText = binding.sim1DbmText,
+        )
+        sim2Views = SimViews(
+            label = binding.sim2OperatorLabel,
+            operatorName = binding.sim2OperatorName,
+            signalText = binding.tvSim2Signal,
+            container = binding.sim2IndicatorContainer,
+            gradientBar = binding.sim2GradientBar,
+            marker = binding.sim2Marker,
+            dbmText = binding.sim2DbmText,
+        )
 
         SignalRepository.init(applicationContext)
         setUpControls()
@@ -104,11 +136,6 @@ class MainActivity : AppCompatActivity() {
             Prefs.setIconTextBlack(this, checkedId == R.id.radioBlack)
         }
 
-        binding.simSelectionRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            if (updatingSimSelection) return@setOnCheckedChangeListener
-            SignalRepository.setSelectedSlot(if (checkedId == R.id.radioSim2) 1 else 0)
-        }
-
         binding.exitButton.setOnClickListener {
             stopService(Intent(this, SignalStrengthService::class.java))
             finishAndRemoveTask()
@@ -116,69 +143,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun render(state: SignalState) {
-        val sim = state.selected
-        val dbm = sim?.metrics?.dbm
-        val generation = sim?.generation ?: NetworkGeneration.UNKNOWN
-
-        val value = if (dbm == null) "--" else dbm.toString()
-        binding.signalstrengthTextView.text = "📶 $value dBm ${generation.label}"
-        binding.dbmValueText.text = "$value dBm"
-
-        updateMarker(dbm)
-        updateSimControls(state)
+        renderSim(sim1Views, state.slot(0))
+        renderSim(sim2Views, state.slot(1))
+        binding.noSimText.visibility = if (state.sims.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun updateSimControls(state: SignalState) {
-        val sim1 = state.hasSlot(0)
-        val sim2 = state.hasSlot(1)
-        val enabledColor = binding.signalstrengthTextView.currentTextColor
-        val disabledColor = ContextCompat.getColor(this, android.R.color.darker_gray)
+    private fun renderSim(views: SimViews, sim: SimSignal?) {
+        val visibility = if (sim == null) View.GONE else View.VISIBLE
+        views.label.visibility = visibility
+        views.operatorName.visibility = visibility
+        views.signalText.visibility = visibility
+        views.container.visibility = visibility
+        if (sim == null) return
 
-        binding.radioSim1.isEnabled = sim1
-        binding.radioSim1.alpha = if (sim1) 1.0f else 0.5f
-        binding.radioSim1.setTextColor(if (sim1) enabledColor else disabledColor)
+        val dbm = sim.metrics.dbm
+        val value = dbm?.toString() ?: "--"
 
-        binding.radioSim2.isEnabled = sim2
-        binding.radioSim2.alpha = if (sim2) 1.0f else 0.5f
-        binding.radioSim2.setTextColor(if (sim2) enabledColor else disabledColor)
+        views.operatorName.text = sim.operatorName
+        views.signalText.text = "📶 $value dBm ${sim.generation.label}"
+        views.signalText.setTextColor(ContextCompat.getColor(this, sim.generation.colorRes()))
+        views.dbmText.text = "$value dBm"
 
-        // `selected` already falls back to a present SIM if the saved slot is gone.
-        val shownSlot = state.selected?.slotIndex ?: state.selectedSlot
-        val target = if (shownSlot == 1) R.id.radioSim2 else R.id.radioSim1
-        if (binding.simSelectionRadioGroup.checkedRadioButtonId != target) {
-            updatingSimSelection = true
-            binding.simSelectionRadioGroup.check(target)
-            updatingSimSelection = false
-        }
+        updateMarker(views, dbm)
     }
 
-    // NOTE: the marker maths below is deliberately left as it was. Both the hardcoded pixel
-    // offset and the layout-params juggling disappear once the gradient PNG is replaced by a
-    // custom view, so patching them here would only be thrown away.
-    private fun updateMarker(dbm: Int?) {
+    /** Green for 4G/5G, amber for 3G, red for 2G and no service. */
+    @ColorRes
+    private fun NetworkGeneration.colorRes(): Int = when (this) {
+        NetworkGeneration.G4, NetworkGeneration.G5 -> R.color.generation_good
+        NetworkGeneration.G3 -> R.color.generation_fair
+        NetworkGeneration.G2, NetworkGeneration.UNKNOWN -> R.color.generation_poor
+    }
+
+    // NOTE: this still drives the PNG gradient bar by moving layout params around. It goes away
+    // with the bar itself when the custom view lands.
+    private fun updateMarker(views: SimViews, dbm: Int?) {
         val position = markerPosition(dbm)
 
-        binding.signalGradientBar.post {
-            binding.dbmValueText.measure(
-                View.MeasureSpec.UNSPECIFIED,
-                View.MeasureSpec.UNSPECIFIED,
-            )
+        views.gradientBar.post {
+            views.dbmText.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
 
-            val barWidth = binding.signalGradientBar.width
-            val markerWidth = binding.signalMarker.width
-            val textWidth = binding.dbmValueText.measuredWidth
+            val barWidth = views.gradientBar.width
+            val markerWidth = views.marker.width
+            val textWidth = views.dbmText.measuredWidth
+            if (barWidth == 0) return@post
+
             val markerX = (position * (barWidth - markerWidth)).toInt()
 
-            val markerParams = binding.signalMarker.layoutParams as RelativeLayout.LayoutParams
-            markerParams.leftMargin = 10 + markerX
-            binding.signalMarker.layoutParams = markerParams
+            val markerParams = views.marker.layoutParams as RelativeLayout.LayoutParams
+            markerParams.leftMargin = markerX
+            views.marker.layoutParams = markerParams
 
-            val idealTextX = 10 + markerX + (markerWidth / 2) - (textWidth / 2)
-            val finalTextX = idealTextX.coerceIn(10, 10 + barWidth - textWidth)
-
-            val textParams = binding.dbmValueText.layoutParams as RelativeLayout.LayoutParams
-            textParams.leftMargin = finalTextX
-            binding.dbmValueText.layoutParams = textParams
+            val idealTextX = markerX + (markerWidth / 2) - (textWidth / 2)
+            val maxTextX = (barWidth - textWidth).coerceAtLeast(0)
+            val textParams = views.dbmText.layoutParams as RelativeLayout.LayoutParams
+            textParams.leftMargin = idealTextX.coerceIn(0, maxTextX)
+            views.dbmText.layoutParams = textParams
         }
     }
 
@@ -233,7 +253,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSignalService() {
-        val intent = Intent(this, SignalStrengthService::class.java)
-        startForegroundService(intent)
+        startForegroundService(Intent(this, SignalStrengthService::class.java))
     }
 }
