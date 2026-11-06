@@ -1,7 +1,9 @@
 package barilyuk.mobilosignal
 
-import android.content.Intent
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -53,6 +55,19 @@ class SettingsActivity : AppCompatActivity() {
 
     class SettingsFragment : PreferenceFragmentCompat() {
 
+        private val requestNotifications =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                val context = context ?: return@registerForActivityResult
+                // No rationale left to show means Android did not even ask: the permission is
+                // denied for good, and only the system settings can still change that.
+                if (!granted &&
+                    !shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+                ) {
+                    SystemSettings.openNotificationSettings(context)
+                }
+                syncNotification()
+            }
+
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             // Must be set before the screen is inflated: androidx.preference writes to the
             // default preferences file otherwise, and the service would never see the changes.
@@ -61,9 +76,16 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<SwitchPreferenceCompat>(Prefs.KEY_PERSISTENT_NOTIFICATION)
                 ?.setOnPreferenceChangeListener { _, newValue ->
-                    applyNotificationSetting(newValue as Boolean)
+                    // Posted: the new value is only persisted once this listener returns, and
+                    // the service decides from the stored value.
+                    view?.post { onNotificationSettingChanged(newValue as Boolean) }
                     true
                 }
+
+            findPreference<Preference>(KEY_ALLOW_NOTIFICATIONS)?.setOnPreferenceClickListener {
+                askForNotifications()
+                true
+            }
 
             findPreference<SwitchPreferenceCompat>(Prefs.KEY_DYNAMIC_COLOUR)?.apply {
                 // Wallpaper based colours are an Android 12 feature; hide the switch where it
@@ -82,28 +104,53 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        override fun onResume() {
+            super.onResume()
+            // The user may be back from the system settings with notifications allowed.
+            syncNotification()
+        }
+
         /**
          * A foreground service cannot exist without a notification, so "off" means the service
          * stops entirely and the reading is only available while the app is open.
          */
-        private fun applyNotificationSetting(enabled: Boolean) {
+        private fun onNotificationSettingChanged(enabled: Boolean) {
             val context = context ?: return
-            val intent = Intent(context, SignalStrengthService::class.java)
-            if (enabled) {
-                runCatching { context.startForegroundService(intent) }
-            } else {
-                context.stopService(intent)
+            if (enabled && !SignalStrengthService.canShowNotification(context)) {
+                askForNotifications()
             }
+            syncNotification()
+        }
+
+        private fun askForNotifications() {
+            val context = context ?: return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                // Before Android 13 there is no permission to ask for; notifications can only
+                // have been blocked in the system settings.
+                SystemSettings.openNotificationSettings(context)
+            }
+        }
+
+        /** Starts or stops the service, and says so when notifications are blocked. */
+        private fun syncNotification() {
+            val context = context ?: return
+            SignalStrengthService.sync(context)
+            findPreference<Preference>(KEY_ALLOW_NOTIFICATIONS)?.isVisible =
+                Prefs.isPersistentNotificationEnabled(context) &&
+                !SignalStrengthService.canShowNotification(context)
         }
 
         private fun killApp() {
             val context = context ?: return
-            context.stopService(Intent(context, SignalStrengthService::class.java))
+            SignalStrengthService.stop(context)
             activity?.finishAffinity()
         }
 
         private companion object {
             const val KEY_KILL_APP = "kill_app"
+            const val KEY_ALLOW_NOTIFICATIONS = "allow_notifications"
         }
     }
 }

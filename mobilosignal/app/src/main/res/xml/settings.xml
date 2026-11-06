@@ -9,7 +9,23 @@
             app:summary="@string/pref_persistent_notification_summary"
             app:title="@string/pref_persistent_notification" />
 
-        <!-- Both of these only mean anything while the notification exists. -->
+        <!-- Only made visible while the notification is wanted but blocked. -->
+        <Preference
+            app:isPreferenceVisible="false"
+            app:key="allow_notifications"
+            app:summary="@string/pref_allow_notifications_summary"
+            app:title="@string/pref_allow_notifications" />
+
+        <!-- These only mean anything while the notification exists. -->
+        <ListPreference
+            app:defaultValue="auto"
+            app:dependency="persistent_notification"
+            app:entries="@array/status_bar_sim_entries"
+            app:entryValues="@array/status_bar_sim_values"
+            app:key="status_bar_sim"
+            app:title="@string/pref_status_bar_sim"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             app:defaultValue="false"
             app:dependency="persistent_notification"

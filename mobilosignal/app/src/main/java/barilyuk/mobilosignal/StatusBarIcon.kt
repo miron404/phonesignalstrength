@@ -9,13 +9,20 @@ import android.graphics.Typeface
 /**
  * Renders the dBm number that goes into the status bar as a bitmap icon.
  *
- * The result is cached: the notification used to allocate a fresh 190x190 ARGB_8888 bitmap on
- * every single modem callback, which can be several per second.
+ * The result is cached: the notification used to allocate a fresh bitmap on every single modem
+ * callback, which can be several per second.
  */
 object StatusBarIcon {
 
-    private const val SIZE = 190
-    private const val TEXT_SIZE = 120f
+    /**
+     * The status bar draws the icon at 24 dp, which is 96 px at the densest bucket (xxxhdpi).
+     * Anything larger is scaled down by the system anyway, but still has to cross Binder with
+     * every notification update: the old 190 px bitmap was about 140 KB a time, this is 36 KB.
+     */
+    private const val SIZE = 96
+
+    /** Same proportion to [SIZE] as the original 120 px text on a 190 px canvas. */
+    private const val TEXT_SIZE = 60.6f
 
     private var cachedText: String? = null
     private var cachedColor: Int = 0

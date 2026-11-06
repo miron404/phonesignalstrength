@@ -12,6 +12,7 @@ import android.telephony.SignalStrength
 import android.telephony.TelephonyDisplayInfo
 import android.telephony.TelephonyManager
 import androidx.annotation.RequiresApi
+import java.lang.reflect.Method
 
 /**
  * Turns the framework's [SignalStrength] into [CellMetrics].
@@ -37,12 +38,22 @@ object SignalParser {
     /** WCDMA Ec/No per 3GPP is -24..1 dB. */
     private val ECNO_RANGE = -24..1
 
+    /**
+     * TelephonyManager.NETWORK_TYPE_LTE_CA. Hidden, but some Android 8 and 9 builds return it from
+     * getDataNetworkType() while carrier aggregation is active.
+     */
+    private const val NETWORK_TYPE_LTE_CA = 19
+
     // Metric names are technical abbreviations that are not translated.
     private const val RSRQ = "RSRQ"
     private const val SINR = "SINR"
     private const val ECNO = "Ec/No"
     private const val BIT_ERRORS = "Bit errors"
 
+    /**
+     * IWLAN (Wi-Fi calling) deliberately maps to UNKNOWN: it says where the data goes, not which
+     * radio the modem is camped on, so the technology is taken from the reading instead.
+     */
     @Suppress("DEPRECATION") // NETWORK_TYPE_IDEN is deprecated but still reported by old modems.
     fun generationOf(networkType: Int): NetworkGeneration = when (networkType) {
         TelephonyManager.NETWORK_TYPE_GPRS,
@@ -64,7 +75,7 @@ object SignalParser {
         TelephonyManager.NETWORK_TYPE_TD_SCDMA -> NetworkGeneration.G3
 
         TelephonyManager.NETWORK_TYPE_LTE,
-        TelephonyManager.NETWORK_TYPE_IWLAN -> NetworkGeneration.G4
+        NETWORK_TYPE_LTE_CA -> NetworkGeneration.G4
 
         TelephonyManager.NETWORK_TYPE_NR -> NetworkGeneration.G5
 
@@ -89,9 +100,9 @@ object SignalParser {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 parseModern(signalStrength, generation)
             } else {
-                parseLegacy(signalStrength)
+                parseLegacy(signalStrength, generation)
             }
-        } catch (t: Throwable) {
+        } catch (e: Exception) {
             // Vendor SignalStrength subclasses have been known to throw from their getters.
             CellMetrics.EMPTY
         }
@@ -123,6 +134,7 @@ object SignalParser {
         val chosen = preferred
             ?: all.firstOrNull { it.dbm.asDbm() != null }
             ?: all.first()
+        val technology = technologyOf(chosen)
 
         return when (chosen) {
             is CellSignalStrengthNr -> CellMetrics(
@@ -132,6 +144,7 @@ object SignalParser {
                     chosen.ssRsrq.inRange(RSRQ_RANGE)?.let { Metric(RSRQ, "$it dB") },
                     chosen.ssSinr.inRange(SINR_RANGE)?.let { Metric(SINR, "$it dB") },
                 ),
+                technology = technology,
             )
 
             is CellSignalStrengthLte -> CellMetrics(
@@ -143,22 +156,39 @@ object SignalParser {
                     // are dropped rather than shown as a nonsense number.
                     chosen.rssnr.inRange(SINR_RANGE)?.let { Metric(SINR, "$it dB") },
                 ),
+                technology = technology,
             )
 
             is CellSignalStrengthWcdma -> CellMetrics(
                 dbm = chosen.dbm.asDbm(),
                 level = chosen.level,
                 extras = listOfNotNull(ecNoOf(chosen)),
+                technology = technology,
             )
 
             is CellSignalStrengthGsm -> CellMetrics(
                 dbm = chosen.dbm.asDbm(),
                 level = chosen.level,
                 extras = listOfNotNull(bitErrorRateOf(chosen.bitErrorRate)),
+                technology = technology,
             )
 
-            else -> CellMetrics(dbm = chosen.dbm.asDbm(), level = chosen.level)
+            else -> CellMetrics(
+                dbm = chosen.dbm.asDbm(),
+                level = chosen.level,
+                technology = technology,
+            )
         }
+    }
+
+    /** Which generation a per-technology reading belongs to. */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun technologyOf(strength: CellSignalStrength): NetworkGeneration = when (strength) {
+        is CellSignalStrengthNr -> NetworkGeneration.G5
+        is CellSignalStrengthLte -> NetworkGeneration.G4
+        is CellSignalStrengthWcdma, is CellSignalStrengthTdscdma -> NetworkGeneration.G3
+        is CellSignalStrengthGsm, is CellSignalStrengthCdma -> NetworkGeneration.G2
+        else -> NetworkGeneration.UNKNOWN
     }
 
     /** Ec/No is the 3G equivalent of RSRQ. Only exposed from API 30. */
@@ -189,9 +219,21 @@ object SignalParser {
         return Metric(BIT_ERRORS, band)
     }
 
-    /** API 26..28 only exposes the aggregate accessors. */
+    /**
+     * API 26..28 only exposes the aggregate 2G/CDMA accessors publicly. LTE RSRP exists there
+     * too, but only behind the hidden getLteRsrp(); without it an Android 8 or 9 phone on LTE has
+     * no reading at all, because the GSM field is then usually 99 ("unknown").
+     */
     @Suppress("DEPRECATION")
-    private fun parseLegacy(signalStrength: SignalStrength): CellMetrics {
+    private fun parseLegacy(signalStrength: SignalStrength, generation: NetworkGeneration): CellMetrics {
+        val level = signalStrength.level
+
+        if (generation == NetworkGeneration.G4 || generation == NetworkGeneration.UNKNOWN) {
+            hiddenLteRsrp(signalStrength)?.let {
+                return CellMetrics(dbm = it, level = level, technology = NetworkGeneration.G4)
+            }
+        }
+
         // 0..31 is the valid ASU window; 99 means "unknown".
         val gsmAsu = signalStrength.gsmSignalStrength
         val dbm = if (gsmAsu in 0..31) {
@@ -200,8 +242,19 @@ object SignalParser {
             runCatching { signalStrength.cdmaDbm }.getOrNull()?.asDbm()
                 ?: runCatching { signalStrength.evdoDbm }.getOrNull()?.asDbm()
         }
-        return CellMetrics(dbm = dbm, level = signalStrength.level)
+        return CellMetrics(dbm = dbm, level = level)
     }
+
+    /**
+     * Best effort: the hidden getter is on the light greylist on Android 9 and unrestricted on 8.
+     * If the platform refuses it, this is simply null and the public fields are used instead.
+     */
+    private val lteRsrpGetter: Method? by lazy {
+        runCatching { SignalStrength::class.java.getMethod("getLteRsrp") }.getOrNull()
+    }
+
+    private fun hiddenLteRsrp(signalStrength: SignalStrength): Int? =
+        runCatching { lteRsrpGetter?.invoke(signalStrength) as? Int }.getOrNull()?.asDbm()
 
     private fun Int.asDbm(): Int? = if (this in DBM_RANGE) this else null
 

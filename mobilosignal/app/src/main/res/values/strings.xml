@@ -1,16 +1,37 @@
 <resources>
-    <string name="app_name">MobiloSignal</string>
+    <string name="app_name" translatable="false">MobiloSignal</string>
 
-    <string name="sim_1">SIM 1</string>
-    <string name="sim_2">SIM 2</string>
-    <string name="no_value">---</string>
-    <string name="sim_title">%1$s · %2$s</string>
-    <string name="dbm_value">%1$s dBm</string>
+    <string name="sim_1" translatable="false">SIM 1</string>
+    <string name="sim_2" translatable="false">SIM 2</string>
+    <string name="sim_slot" translatable="false">SIM %1$d</string>
+    <string name="sim_title" translatable="false">%1$s · %2$s</string>
+    <string name="dbm_value" translatable="false">%1$s dBm</string>
     <string name="no_sim">No SIM detected</string>
+
+    <!-- Main screen, while READ_PHONE_STATE is missing. -->
+    <string name="permission_phone_title">Phone permission needed</string>
+    <string name="permission_phone_message">MobiloSignal needs the phone permission to see your SIM cards and read their signal strength. It does not make calls and does not read your location.</string>
+    <string name="permission_phone_button">Grant permission</string>
+
+    <!-- Shown once, after the notification permission has been refused. -->
+    <string name="notification_rationale_title">Notification permission required</string>
+    <string name="notification_rationale_message">The signal strength in the status bar needs the notification permission. The app still works without it, but the reading is only visible while this screen is open. You can allow it later in Settings.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="not_now">Not now</string>
 
     <!-- Spoken by screen readers for the signal bar. -->
     <string name="no_signal_reading">No signal reading</string>
     <string name="signal_reading">%1$d dBm on %2$s</string>
+    <string name="signal_reading_no_generation" translatable="false">%1$d dBm</string>
+
+    <!-- The ongoing notification. -->
+    <string name="notification_channel_name">Signal strength monitoring</string>
+    <string name="notification_channel_description">Shows the current signal strength</string>
+    <string name="notification_title">Signal strength</string>
+    <string name="notification_single">Signal strength: %1$s</string>
+    <string name="notification_no_permission">Phone permission needed — open the app</string>
+    <!-- Design-time placeholder only; the service always sets the real text. -->
+    <string name="notification_placeholder" translatable="false">Signal strength</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_category_status_bar">Status bar</string>
@@ -22,11 +43,12 @@
     <string name="pref_kill_app_summary">Stop the notification and close the app completely.</string>
     <string name="pref_persistent_notification">Persistent notification</string>
     <string name="pref_persistent_notification_summary">Keep the signal reading in the status bar. Turn this off to use the app only while it is open — Android does not allow background monitoring without a notification.</string>
+    <string name="pref_allow_notifications">Notifications are blocked</string>
+    <string name="pref_allow_notifications_summary">Tap to allow them, otherwise the reading cannot appear in the status bar.</string>
+    <string name="pref_status_bar_sim">Number in the status bar</string>
+    <string name="status_bar_sim_auto">Best signal</string>
     <string name="pref_dark_icon">Dark icon text</string>
     <string name="pref_dark_icon_summary">Draw the status bar number as black text on white instead of white on transparent.</string>
-    <string name="pref_auto_start">Start on boot</string>
-    <string name="pref_auto_start_summary">Show the notification again after the phone restarts.</string>
-
-    <!-- Design-time placeholder only; the service always sets the real text. -->
-    <string name="notification_placeholder">Signal strength</string>
+    <string name="pref_auto_start">Start automatically</string>
+    <string name="pref_auto_start_summary">Show the notification again after the phone restarts or the app is updated.</string>
 </resources>

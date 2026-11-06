@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Which SIM the status bar icon follows. Values match Prefs.statusBarSlot(). -->
+    <string-array name="status_bar_sim_entries">
+        <item>@string/status_bar_sim_auto</item>
+        <item>@string/sim_1</item>
+        <item>@string/sim_2</item>
+    </string-array>
+
+    <string-array name="status_bar_sim_values" translatable="false">
+        <item>auto</item>
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+</resources>

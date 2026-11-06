@@ -1,0 +1,40 @@
+<resources>
+    <string name="no_sim">SIM-картку не виявлено</string>
+
+    <string name="permission_phone_title">Потрібен дозвіл «Телефон»</string>
+    <string name="permission_phone_message">MobiloSignal потрібен дозвіл «Телефон», щоб бачити SIM-картки та рівень їхнього сигналу. Застосунок не здійснює дзвінків і не визначає ваше місцезнаходження.</string>
+    <string name="permission_phone_button">Надати дозвіл</string>
+
+    <string name="notification_rationale_title">Потрібен дозвіл на сповіщення</string>
+    <string name="notification_rationale_message">Щоб показувати рівень сигналу в рядку стану, потрібен дозвіл на сповіщення. Без нього застосунок працює, але значення видно лише на цьому екрані. Дозволити можна пізніше в налаштуваннях.</string>
+    <string name="open_settings">Відкрити налаштування</string>
+    <string name="not_now">Не зараз</string>
+
+    <string name="no_signal_reading">Немає даних про сигнал</string>
+    <string name="signal_reading">%1$d dBm, %2$s</string>
+
+    <string name="notification_channel_name">Моніторинг рівня сигналу</string>
+    <string name="notification_channel_description">Показує поточний рівень сигналу</string>
+    <string name="notification_title">Рівень сигналу</string>
+    <string name="notification_single">Рівень сигналу: %1$s</string>
+    <string name="notification_no_permission">Потрібен дозвіл «Телефон» — відкрийте застосунок</string>
+
+    <string name="settings_title">Налаштування</string>
+    <string name="settings_category_status_bar">Рядок стану</string>
+    <string name="settings_category_appearance">Вигляд</string>
+    <string name="settings_category_app">Застосунок</string>
+    <string name="pref_dynamic_colour">Динамічні кольори</string>
+    <string name="pref_dynamic_colour_summary">Брати акцентні кольори зі шпалер. Потрібен Android 12 або новіший.</string>
+    <string name="pref_kill_app">Закрити застосунок</string>
+    <string name="pref_kill_app_summary">Прибрати сповіщення й повністю закрити застосунок.</string>
+    <string name="pref_persistent_notification">Постійне сповіщення</string>
+    <string name="pref_persistent_notification_summary">Показувати рівень сигналу в рядку стану. Якщо вимкнути, застосунок працює лише поки відкритий — Android не дозволяє фоновий моніторинг без сповіщення.</string>
+    <string name="pref_allow_notifications">Сповіщення заблоковано</string>
+    <string name="pref_allow_notifications_summary">Натисніть, щоб дозволити, інакше значення не з’явиться в рядку стану.</string>
+    <string name="pref_status_bar_sim">Число в рядку стану</string>
+    <string name="status_bar_sim_auto">Найкращий сигнал</string>
+    <string name="pref_dark_icon">Темний текст значка</string>
+    <string name="pref_dark_icon_summary">Малювати число в рядку стану чорним на білому замість білого на прозорому.</string>
+    <string name="pref_auto_start">Автозапуск</string>
+    <string name="pref_auto_start_summary">Знову показувати сповіщення після перезавантаження телефона або оновлення застосунку.</string>
+</resources>

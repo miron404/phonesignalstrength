@@ -65,20 +65,14 @@ class SignalBarView @JvmOverloads constructor(
         this.dbm = dbm
         scale = newScale
 
-        contentDescription = if (dbm == null) {
-            context.getString(R.string.no_signal_reading)
-        } else {
-            context.getString(R.string.signal_reading, dbm, generation.label)
+        contentDescription = when {
+            dbm == null -> context.getString(R.string.no_signal_reading)
+            generation == NetworkGeneration.UNKNOWN ->
+                context.getString(R.string.signal_reading_no_generation, dbm)
+            else -> context.getString(R.string.signal_reading, dbm, generation.label)
         }
 
-        animateTo(positionOf(dbm))
-    }
-
-    private fun positionOf(dbm: Int?): Float {
-        if (dbm == null) return 0f
-        val span = (scale.max - scale.min).toFloat()
-        if (span <= 0f) return 0f
-        return ((dbm - scale.min) / span).coerceIn(0f, 1f)
+        animateTo(dbm?.let { scale.fractionOf(it).coerceIn(0f, 1f) } ?: 0f)
     }
 
     private fun animateTo(target: Float) {

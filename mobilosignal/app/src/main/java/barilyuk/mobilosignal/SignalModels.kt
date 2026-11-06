@@ -2,7 +2,8 @@ package barilyuk.mobilosignal
 
 /** Cellular generation as shown to the user. */
 enum class NetworkGeneration(val label: String) {
-    UNKNOWN("0G"),
+    /** No network type and no reading to infer one from. Not shown as a badge. */
+    UNKNOWN("—"),
     G2("2G"),
     G3("3G"),
     G4("4G"),
@@ -23,7 +24,17 @@ data class SignalScale(
     val max: Int,
     val poorMax: Int,
     val fairMax: Int,
-)
+) {
+    /**
+     * Where [dbm] sits on this scale: 0f at [min], 1f at [max]. Deliberately not clamped, so two
+     * readings that are both off the scale still compare correctly; callers that draw clamp it.
+     */
+    fun fractionOf(dbm: Int): Float {
+        val span = (max - min).toFloat()
+        if (span <= 0f) return 0f
+        return (dbm - min) / span
+    }
+}
 
 val NetworkGeneration.scale: SignalScale
     get() = when (this) {
@@ -56,6 +67,11 @@ data class CellMetrics(
     val level: Int = 0,
     /** Quality metrics for the technology in use; empty when none are available. */
     val extras: List<Metric> = emptyList(),
+    /**
+     * The technology the reading itself came from, when that can be told. Used when the network
+     * type is unknown, which is common on a SIM that is not the data SIM.
+     */
+    val technology: NetworkGeneration = NetworkGeneration.UNKNOWN,
 ) {
     companion object {
         val EMPTY = CellMetrics()
@@ -73,21 +89,25 @@ data class SimSignal(
 
 data class SignalState(
     val sims: List<SimSignal> = emptyList(),
-    val selectedSlot: Int = 0,
+    /**
+     * False while READ_PHONE_STATE is missing. The SIM list is empty then too, but for a
+     * different reason than "no SIM inserted", and the UI has to say which.
+     */
+    val permissionGranted: Boolean = true,
 ) {
     val isDualSim: Boolean get() = sims.size > 1
 
     fun slot(index: Int): SimSignal? = sims.firstOrNull { it.slotIndex == index }
 
-    /** The SIM the user picked, falling back to whatever is actually present. */
-    val selected: SimSignal?
-        get() = slot(selectedSlot) ?: sims.firstOrNull()
-
     /**
-     * The SIM with the best reading. The status bar icon can only carry one number, so with two
-     * SIMs it shows whichever is actually receiving better.
+     * The SIM with the best reading. Readings are compared by where they sit on their own
+     * technology's scale, not by raw dBm: GSM RSSI and LTE RSRP measure different things, and RSRP
+     * runs some 20-30 dB below RSSI for the same reception, so a raw comparison would favour 2G.
      */
     val strongest: SimSignal?
-        get() = sims.filter { it.metrics.dbm != null }.maxByOrNull { it.metrics.dbm ?: Int.MIN_VALUE }
+        get() = sims
+            .mapNotNull { sim -> sim.metrics.dbm?.let { sim to sim.generation.scale.fractionOf(it) } }
+            .maxByOrNull { it.second }
+            ?.first
             ?: sims.firstOrNull()
 }

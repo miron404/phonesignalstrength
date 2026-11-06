@@ -4,22 +4,18 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.view.View
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.ColorRes
-import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -37,24 +33,21 @@ class MainActivity : AppCompatActivity() {
 
     private var dynamicColourApplied = false
 
-
     private val requestPhoneState =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
                 SignalRepository.refresh()
-                if (Prefs.isPersistentNotificationEnabled(this)) startSignalService()
-            } else {
-                Toast.makeText(this, "Permission denied, cannot read SIM signal", Toast.LENGTH_LONG)
-                    .show()
+                SignalStrengthService.sync(this)
             }
+            // A refusal needs no toast: the screen itself now says what is missing.
             // Only now, once the first dialog is gone: Android drops a permission request that
             // arrives while another one is still on screen.
-            ensureNotificationPermission()
+            maybeRequestNotifications()
         }
 
     private val requestNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (!granted) showNotificationRationale()
+            if (granted) SignalStrengthService.sync(this) else showNotificationRationale()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,16 +67,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (hasPhoneStatePermission()) {
-            ensureNotificationPermission()
-        } else {
-            requestPhoneState.launch(Manifest.permission.READ_PHONE_STATE)
+        // Only on a fresh start. After a rotation a request may still be on screen, and asking
+        // again would make Android answer the duplicate with an immediate refusal.
+        if (savedInstanceState == null) {
+            if (hasPhoneStatePermission()) {
+                maybeRequestNotifications()
+            } else if (!isPhonePermissionDeniedForGood()) {
+                requestPhonePermission()
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
         SignalRepository.acquire(this)
+        // Picks up a permission granted from the system settings while the app was in the
+        // background. Does nothing if the SIMs are unchanged.
+        SignalRepository.refresh()
     }
 
     override fun onResume() {
@@ -92,11 +92,11 @@ class MainActivity : AppCompatActivity() {
             recreate()
             return
         }
-        // With the notification switched off there is no service at all; the reading comes
-        // straight from the repository while this screen is open.
-        if (hasPhoneStatePermission() && Prefs.isPersistentNotificationEnabled(this)) {
-            startSignalService()
-        }
+        // Starts the notification if it is wanted and possible, stops it if it no longer is (for
+        // example because notifications were blocked in the system settings). With it off there
+        // is no service at all; the reading comes straight from the repository while this
+        // screen is open.
+        SignalStrengthService.sync(this)
     }
 
     override fun onStop() {
@@ -131,24 +131,29 @@ class MainActivity : AppCompatActivity() {
         binding.settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
-
+        binding.grantPermissionButton.setOnClickListener { onGrantPhonePermission() }
     }
 
     private fun render(state: SignalState) {
-        renderSim(binding.sim1Card, R.string.sim_1, state.slot(0))
-        renderSim(binding.sim2Card, R.string.sim_2, state.slot(1))
-        binding.noSimText.visibility = if (state.sims.isEmpty()) View.VISIBLE else View.GONE
+        binding.permissionCard.isVisible = !state.permissionGranted
+        renderSim(binding.sim1Card, state.slot(0))
+        renderSim(binding.sim2Card, state.slot(1))
+        // Without the permission the list is empty too, but "no SIM" would be untrue.
+        binding.noSimText.isVisible = state.permissionGranted && state.sims.isEmpty()
     }
 
-    private fun renderSim(card: ViewSimCardBinding, @StringRes slotName: Int, sim: SimSignal?) {
-        card.root.visibility = if (sim == null) View.GONE else View.VISIBLE
+    private fun renderSim(card: ViewSimCardBinding, sim: SimSignal?) {
+        card.root.isVisible = sim != null
         if (sim == null) return
 
-        card.simTitle.text = getString(R.string.sim_title, getString(slotName), sim.operatorName)
+        val slotName = getString(R.string.sim_slot, sim.slotIndex + 1)
+        card.simTitle.text = getString(R.string.sim_title, slotName, sim.operatorName)
         card.dbmValue.text = getString(R.string.dbm_value, sim.metrics.dbm?.toString() ?: "--")
         card.signalBar.setReading(sim.metrics.dbm, sim.generation)
         renderMetrics(card.metricsRow, sim.metrics.extras)
 
+        // No network type and nothing to infer one from: a red chip with a dash would only alarm.
+        card.generationBadge.isVisible = sim.generation != NetworkGeneration.UNKNOWN
         val colour = ContextCompat.getColor(this, sim.generation.colorRes())
         card.generationBadge.text = sim.generation.label
         card.generationBadge.setTextColor(colour)
@@ -167,7 +172,7 @@ class MainActivity : AppCompatActivity() {
         row.setTag(R.id.metricsRow, metrics)
 
         row.removeAllViews()
-        row.visibility = if (metrics.isEmpty()) View.GONE else View.VISIBLE
+        row.isVisible = metrics.isNotEmpty()
         for (metric in metrics) {
             val item = ViewMetricBinding.inflate(layoutInflater, row, false)
             item.metricLabel.text = metric.label
@@ -188,48 +193,57 @@ class MainActivity : AppCompatActivity() {
         ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
             PackageManager.PERMISSION_GRANTED
 
-    private fun ensureNotificationPermission() {
+    /**
+     * Android answers a request for a permission denied for good with an instant refusal and no
+     * dialog, and reports "never asked" and "denied for good" the same way. The flag tells them
+     * apart.
+     */
+    private fun isPhonePermissionDeniedForGood(): Boolean =
+        Prefs.wasPhonePermissionAsked(this) &&
+            !shouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE)
+
+    private fun requestPhonePermission() {
+        Prefs.setPhonePermissionAsked(this)
+        requestPhoneState.launch(Manifest.permission.READ_PHONE_STATE)
+    }
+
+    private fun onGrantPhonePermission() {
+        if (isPhonePermissionDeniedForGood()) {
+            SystemSettings.openAppDetails(this)
+        } else {
+            requestPhonePermission()
+        }
+    }
+
+    /**
+     * Asks once. A refusal is explained once, after which the app stops asking on launch: from
+     * then on, turning the notification on in the settings screen is where it gets allowed.
+     */
+    private fun maybeRequestNotifications() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        // Nothing to ask for if the user has switched the notification off.
+        if (!Prefs.isPersistentNotificationEnabled(this)) return
+        if (Prefs.wasNotificationPromptShown(this)) return
         val granted = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
-        // Nothing to explain while the permission is in place; the old build showed its dialog
-        // unconditionally on every single launch.
         if (!granted) requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun showNotificationRationale() {
-        if (isFinishing) return
+        if (isFinishing || Prefs.wasNotificationPromptShown(this)) return
+        Prefs.setNotificationPromptShown(this)
         permissionDialog?.dismiss()
         permissionDialog = AlertDialog.Builder(this)
-            .setTitle("Notification permission required")
-            .setMessage(
-                "MobiloSignal's key feature — signal strength in the status bar — needs the " +
-                    "notification permission. The app still works without it, but the reading " +
-                    "will only be visible while this screen is open."
-            )
-            .setPositiveButton("Open settings") { _, _ -> openNotificationSettings() }
-            .setNegativeButton("Later", null)
+            .setTitle(R.string.notification_rationale_title)
+            .setMessage(R.string.notification_rationale_message)
+            .setPositiveButton(R.string.open_settings) { _, _ ->
+                SystemSettings.openNotificationSettings(this)
+            }
+            .setNegativeButton(R.string.not_now, null)
             .create()
             .also { it.show() }
-    }
-
-    private fun openNotificationSettings() {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-            .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-        runCatching { startActivity(intent) }.onFailure {
-            runCatching {
-                startActivity(
-                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        .setData(Uri.fromParts("package", packageName, null))
-                )
-            }
-        }
-    }
-
-    private fun startSignalService() {
-        startForegroundService(Intent(this, SignalStrengthService::class.java))
     }
 
     private companion object {
