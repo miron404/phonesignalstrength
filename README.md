@@ -30,7 +30,7 @@
 
 ## 📝 Overview
 
-**Cell Signal Strength** is a simple yet powerful Android app designed to display real-time cellular signal strength in **dBm (decibel-milliwatts)** — the most accurate and reliable metric for evaluating mobile reception quality. The app visually and numerically represents signal strength and provides user-selectable SIM slot monitoring and status bar customization for maximum usability.
+**MobiloSignal** is a simple yet powerful Android app designed to display real-time cellular signal strength in **dBm (decibel-milliwatts)** — the most accurate and reliable metric for evaluating mobile reception quality. The app visually and numerically represents signal strength for every SIM in the phone and keeps the reading in the status bar.
 
 The user interface design allows for any non tech-profound person to understand the displayed value through visual graphic indicator of the signal strength level.
 
@@ -38,10 +38,19 @@ The user interface design allows for any non tech-profound person to understand 
 
 ## ⚙️ How It Works
 
-* The app uses the `TelephonyManager` API to access **cell signal strength** data, updated every second.
-* It runs a background `Service` (`SignalStrengthService.java`) which collects and pushes updates to the UI.
-* On supported devices, it fetches signal strength separately for SIM 1 and SIM 2.
-* The triangle marker on the gradient bar adjusts position according to the dBm value.
+* The app listens to the modem's signal strength reports through `TelephonyManager`
+  (`TelephonyCallback` on Android 12+, `PhoneStateListener` before). It is event driven:
+  nothing polls, and a value only changes when the modem reports a new one. See
+  [docs/live-signal-updates.md](docs/live-signal-updates.md) for why a reading can sit still.
+* `SignalRepository` owns those subscriptions and shares one state between the screen and the
+  notification. An optional foreground service (`SignalStrengthService`) keeps the reading in
+  the status bar.
+* Both SIMs are shown side by side on dual-SIM phones. The status bar number follows whichever
+  SIM has the better signal, or a SIM picked in the settings.
+* The value shown is RSRP on 4G, SS-RSRP on 5G, and RSSI/RSCP on 2G/3G. A bar under it is
+  coloured by what the reading means for that technology, plus quality metrics (RSRQ, SINR,
+  Ec/No, bit error rate) where the modem reports them.
+* The only permissions are phone state and notifications. Location is not requested.
 
 
 ---

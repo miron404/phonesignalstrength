@@ -29,7 +29,7 @@ Two other things make a specific SIM look frozen:
 |---|---|---|
 | `TelephonyManager.getSignalStrength()` on a timer | **No** | Battery, for nothing |
 | `getAllCellInfo()` / `requestCellInfoUpdate()` on a timer | **Yes** | `ACCESS_FINE_LOCATION` |
-| `setSignalStrengthUpdateRequest()` | Probably | Fragile, vendor dependent |
+| `setSignalStrengthUpdateRequest()` | **No** | Not available to normal apps |
 
 ### 1. Polling `getSignalStrength()` — tried, reverted
 
@@ -81,20 +81,20 @@ with a rate in seconds), the preference plumbing and the poll loop shape. It can
 be cherry-picked as a starting point; only the "how do we read" part needs
 replacing.
 
-### 3. `setSignalStrengthUpdateRequest()` — not attempted
+### 3. `setSignalStrengthUpdateRequest()` — not available
 
-`TelephonyManager.setSignalStrengthUpdateRequest()` (API 30+) is the API actually
-designed for asking the modem to report more finely. It stays event driven, and
-it needs no location permission.
+`TelephonyManager.setSignalStrengthUpdateRequest()` is the API actually designed
+for asking the modem to report more finely. It stays event driven and needs no
+location permission, which made it look like the way out.
 
-It was not attempted because it requires building a `SignalThresholdInfo` for
-each radio access network and each measurement type, it throws
-`IllegalArgumentException` on malformed threshold arrays, and how much it helps
-depends on the modem vendor. Writing that without a device to test against is
-how you ship fragile code.
+It is not. Per the reference documentation it was added in **API 31** (as was
+`SignalStrengthUpdateRequest`), and it requires **`MODIFY_PHONE_STATE` or carrier
+privileges**. `MODIFY_PHONE_STATE` is a signature/privileged permission and
+carrier privileges come from the SIM's carrier, so an app installed from a
+store or an APK cannot call it. An earlier version of this note listed it as
+API 30+ and merely fragile; both were wrong.
 
-If mechanism 2 is ever rejected on privacy grounds but live updates are still
-wanted, this is the one to explore — with a device in hand.
+That leaves mechanism 2 as the only working route to live readings.
 
 ## API levels, verified against the SDK
 
@@ -107,5 +107,6 @@ Checked in `platforms/android-35/data/api-versions.xml`, not from memory:
 | `CellSignalStrengthNr.getSsRsrq/getSsSinr` | 29 |
 | `SignalStrength.getCellSignalStrengths` | 29 |
 | `TelephonyManager.getSignalStrength` | 28 |
+| `TelephonyManager.setSignalStrengthUpdateRequest` | 31 (reference docs) |
 | `CellSignalStrengthWcdma.getEcNo` | 30 |
 | `CellSignalStrengthGsm.getRssi` | 30 |
